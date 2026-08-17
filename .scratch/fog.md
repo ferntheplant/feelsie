@@ -106,9 +106,9 @@ what the system promises. A claim naming the literal hour would need rewording t
 moved it, and rewording a claim puts every witness attesting it back into the audit scope.
 
 Cleared into `checkin/prompt/is-sent-at-the-send-hour` and a new
-`core/config/is-required-not-defaulted`, the second of which exists because a `?? "UTC"` fallback
-on the time zone would silently misfile every entry while every date test still passed. F11 later
-moved that claim up a rung, from a test to a type plus a test.
+`core/config/is-required`, which exists because a `?? "UTC"` fallback on the time zone would
+silently misfile every entry while every date test still passed. F11 later added
+`core/config/is-context-service` as the structural half.
 
 ### F6 — Does the confirmation page show a chart? · cleared by judgment
 
@@ -167,9 +167,8 @@ Effect moves claims between witness kinds, and a claim's witness kind is part of
 
 **And clearing it improved the witness situation twice over.**
 
-1. `core/config/is-required-not-defaulted` moved from kind 2 to kind 1. A time zone in the
-   context means code that reads a local date without one does not compile, and there is nowhere
-   left to write `?? "UTC"`.
+1. `core/config/is-context-service` carries the type witness. `core/config/is-required` keeps the
+   runtime test that rejects a missing value and catches `?? "UTC"`.
 2. The development claims deferred in this item now have witnesses waiting for them. The Effect
    linter ships ~80 rules and emits them as Oxlint type-aware rules, so each rule this project
    turns on is a lint witness with no adapter work and no custom rule. The marker goes on the
@@ -178,8 +177,8 @@ Effect moves claims between witness kinds, and a claim's witness kind is part of
 Deferring those claims still stands. What changed is that they are now cheap and chosen rather
 than expensive and inherited, so the reason to defer is sequencing rather than doubt.
 
-One rule retires: "no floating promises" guards an empty set under Effect, and `floatingEffect`
-replaces it.
+`floatingEffect` guards Effect programs. The promise rule remains for test and runtime adapters
+that call `Effect.runPromise`.
 
 Left open as [F12](#f12): whether Vite+'s bundled Oxlint is new enough to carry the rules.
 

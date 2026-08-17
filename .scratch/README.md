@@ -7,10 +7,8 @@ Nothing here is durable. Nothing here is a claim.
 
 ## Why it exists at all
 
-The catalog is present tense — a claim is in it only when a sound witness affirms it, and it
-enters in the merge that makes it true. Feelsie has no code, so the catalog is empty and must
-stay empty. But `ABSTRACT.md` was full of promises, and those promises have to go somewhere
-that is not the catalog.
+The catalog is present tense. A claim enters in the merge that makes it true. Unimplemented
+promises need a separate home, which this directory provides.
 
 Crux says there are exactly two states outside the catalog, and this directory is one file for
 each:
@@ -20,9 +18,8 @@ each:
 | **fog**                | no                       | [`fog.md`](./fog.md)           | human judgment, or evidence |
 | **proposed amendment** | yes                      | [`amendments/`](./amendments/) | the merge that enacts it    |
 
-An amendment is normally held by the branch doing the work. There is no branch and no belay, so
-the drafts sit here until there is one. That substitution is itself a finding — see
-[`FOG-LOG.md`](./FOG-LOG.md).
+An amendment is normally held by the branch doing the work. Belay does not exist, so the drafts
+also sit here. That substitution is itself a finding. See [`FOG-LOG.md`](./FOG-LOG.md).
 
 ## Reading order
 
@@ -34,7 +31,7 @@ the drafts sit here until there is one. That substitution is itself a finding �
 
 - **A slug written here and a slug written in `docs/rationale/` must match, and nothing checks
   that.** Crux would. Until it does, grep before you rename.
-- **Do not promote anything into `docs/catalog/` ahead of a witness.** The empty catalog is the
-  invariant this whole exercise is testing.
+- **Promote nothing into `docs/catalog/` ahead of a witness.** The affirmed catalog is the
+  invariant this exercise tests.
 - **When an item stops being fog, say what cleared it** — judgment or evidence. Which of the two
   does more work is one of the things this experiment is measuring.

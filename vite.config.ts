@@ -79,6 +79,23 @@ export default defineConfig({
     env: {
       builtin: true,
     },
+    overrides: [
+      // @attests core/token/never-uses-math-random
+      {
+        files: ["packages/core/**"],
+        rules: {
+          "no-restricted-properties": [
+            "error",
+            {
+              object: "Math",
+              property: "random",
+              message: "Use Web Crypto for token bytes.",
+            },
+          ],
+        },
+      },
+      // @attests:end
+    ],
   },
   run: {
     cache: true,

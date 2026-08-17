@@ -214,6 +214,9 @@ catalogs:
     '@effect/tsgo':
       specifier: 0.36.5
       version: 0.36.5
+    '@effect/vitest':
+      specifier: 4.0.0-rc.110
+      version: 4.0.0-rc.110
     '@types/node':
       specifier: ^24
       version: 24.13.3
@@ -275,12 +278,18 @@ importers:
         specifier: 4.1.10
         version: 4.1.10(@types/node@24.13.3)(@vitest/browser-preview@4.1.10)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@24.13.3)(jiti@2.6.1)(typescript@7.0.2))
 
-  apps/example:
+  packages/core:
     dependencies:
       effect:
         specifier: 'catalog:'
         version: 4.0.0-rc.110
     devDependencies:
+      '@effect/vitest':
+        specifier: 'catalog:'
+        version: 4.0.0-rc.110(effect@4.0.0-rc.110)(vitest@4.1.10)
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.13.3
       vite:
         specifier: npm:@voidzero-dev/vite-plus-core@0.2.9
         version: '@voidzero-dev/vite-plus-core@0.2.9(@types/node@24.13.3)(jiti@2.6.1)(typescript@7.0.2)'
@@ -428,6 +437,12 @@ packages:
   '@effect/tsgo@0.36.5':
     resolution: {integrity: sha512-BHxVjeRK1/XlqYHWXkbT4W9JpOrT3sNA2wrfwQPBTojD5OSyxI2TUIltobYhWudyfuCrn770qP6uOpDjdrmghA==}
     hasBin: true
+
+  '@effect/vitest@4.0.0-rc.110':
+    resolution: {integrity: sha512-ZvceBAWOPDnLgQgoObxPZOBuRTaRhBUR0K8sT4vfwwnf6Sv92GvCFp+WmfFV31j58Inf2p+wU1C3o9TNC1MZrQ==}
+    peerDependencies:
+      effect: ^4.0.0-rc.110
+      vitest: 4.1.10
 
   '@fallow-cli/darwin-arm64@3.14.0':
     resolution: {integrity: sha512-seaix3OqADcq90PkPOOPrN8Jl7QZDGjFziHA85Ikp+lGSHVjJ2IMyGh/QKLhvi9Q6Ha3Y//F0+PFFGNd0Gi4mw==}
@@ -1923,6 +1938,11 @@ snapshots:
       '@effect/tsgo-linux-x64': 0.36.5
       '@effect/tsgo-win32-arm64': 0.36.5
       '@effect/tsgo-win32-x64': 0.36.5
+
+  '@effect/vitest@4.0.0-rc.110(effect@4.0.0-rc.110)(vitest@4.1.10)':
+    dependencies:
+      effect: 4.0.0-rc.110
+      vitest: 4.1.10(@types/node@24.13.3)(@vitest/browser-preview@4.1.10)(@voidzero-dev/vite-plus-core@0.2.9(@types/node@24.13.3)(jiti@2.6.1)(typescript@7.0.2))
 
   '@fallow-cli/darwin-arm64@3.14.0':
     optional: true

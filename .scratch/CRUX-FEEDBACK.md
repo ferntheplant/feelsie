@@ -299,10 +299,11 @@ right altitude is.
 **The original finding was wrong.** It claimed crux had a gap: a claim where neither witness
 alone attests it, which §5.7 does not discuss. Both of its examples fail.
 
-- `core/token/is-random` — the claim was _32 bytes from a CSPRNG, base64url_, and the proposed
-  pair was a lint rule plus a test. But the lint rule attests **no weak randomness** and the test
-  attests **shape**. Those are two claims wearing one slug: `token/uses-a-csprng` and
-  `token/is-32-bytes-base64url`, one honest witness each.
+- `core/token/is-random` — the first split separated the CSPRNG property from output shape.
+  Implementation showed that the CSPRNG half still joined two properties. A Web Crypto test
+  attests the production source. A lint rule attests only that `Math.random` is unreachable. The
+  final split has `token/uses-web-crypto`, `token/never-uses-math-random`, and
+  `token/is-32-bytes-base64url`.
 - `backup/lands-in-r2` — already dissolved by C1 and rewritten to
   `checkin/backup/writes-a-restorable-export`, witnessed by one local test. The finding was left
   standing on the deleted version.
@@ -317,12 +318,12 @@ that the claims are coupled. This warns about one claim needing many markers, an
 is that the claim is compound.
 
 It held a third time on a claim written later in the same session.
-`core/config/is-required-not-defaulted` was given a type witness _and_ a test witness, and they
-answer different questions: the type says code cannot run without the configuration, the test says
-a present-but-invalid value is rejected. **Availability and validation.** Two claims.
+`core/config/is-required-not-defaulted` first became availability and validation. Implementation
+then split availability again: the type says operations require a context service, while the test
+says absent runtime values fail without a fallback. The final form has three claims.
 
-Three for three, in three different directions — a compound predicate, an out-of-scope subject,
-and two distinct properties sharing a name. Splitting is the answer every time.
+Three examples covered a compound predicate, an out-of-scope subject, and distinct properties
+sharing a name. The token case needed a second split when implementation tested its witness.
 
 **To port.** A paragraph beside §5.7, since the two are the same observation from opposite ends.
 
@@ -492,7 +493,7 @@ since the token is whitespace-delimited.
 
 | Form                       | Renders as        | Scans?                                   |
 | -------------------------- | ----------------- | ---------------------------------------- |
-| `<!-- @claim foo/bar -->`  | **nothing**       | yes                                      |
+| `<!-- @claim foo/bar -->`  | **nothing**       | yes `crux-ignore`                        |
 | `` `@claim foo/bar` ``     | code span         | **no** — the token becomes ``foo/bar` `` |
 | `## @claim foo/bar`        | heading, anchored | yes, but fights `@kind` (see below)      |
 | `> @claim foo/bar`         | blockquote        | yes                                      |

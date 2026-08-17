@@ -1,6 +1,6 @@
 # Feelsie
 
-Status: draft. Not built yet.
+Status: draft. The core package is built. The Workers are not built yet.
 Written in ASD-STE100 Simplified Technical English.
 
 ---
@@ -58,18 +58,17 @@ Both Workers use the same D1 database.
 This file used to hold six different kinds of writing. Each kind now has one home, and nothing
 lives in two of them.
 
-| If you need                        | Read                                                                |
-| ---------------------------------- | ------------------------------------------------------------------- |
-| What a word means                  | [`GLOSSARY.md`](./GLOSSARY.md)                                      |
-| What the system promises now       | [`docs/catalog/`](./docs/catalog/) — empty until something is built |
-| Why a promise reads as it does     | [`docs/rationale/`](./docs/rationale/)                              |
-| Why something broken is not broken | [`docs/gotchas.md`](./docs/gotchas.md)                              |
-| How to perform a one-time setup    | [`docs/runbooks/`](./docs/runbooks/)                                |
-| What is not decided yet            | [`.scratch/fog.md`](./.scratch/fog.md)                              |
-| What gets built, and in what order | [`.scratch/amendments/`](./.scratch/amendments/)                    |
+| If you need                        | Read                                             |
+| ---------------------------------- | ------------------------------------------------ |
+| What a word means                  | [`GLOSSARY.md`](./GLOSSARY.md)                   |
+| What the system promises now       | [`docs/catalog/`](./docs/catalog/)               |
+| Why a promise reads as it does     | [`docs/rationale/`](./docs/rationale/)           |
+| Why something broken is not broken | [`docs/gotchas.md`](./docs/gotchas.md)           |
+| How to perform a one-time setup    | [`docs/runbooks/`](./docs/runbooks/)             |
+| What is not decided yet            | [`.scratch/fog.md`](./.scratch/fog.md)           |
+| What gets built, and in what order | [`.scratch/amendments/`](./.scratch/amendments/) |
 
-The catalog is empty on purpose. A claim enters it in the merge that makes it true, and nothing
-has been built. Until then every promise is a proposal, and a proposal lives in `.scratch/`.
+The catalog contains the core claims. The remaining promises are proposals in `.scratch/`.
 
 ---
 

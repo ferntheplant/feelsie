@@ -287,3 +287,43 @@ instance.
 **The TypeScript and Oxlint diagnostic paths needed one owner.** The language service remains
 enabled for editor features, but its diagnostics are off. Oxlint owns diagnostics, so the same
 Effect finding does not appear twice.
+
+---
+
+## 2026-08-17 - A001 implementation
+
+The first implementation pass converted A001 into a core package, one migration, and fourteen
+declared claims.
+
+### Clerical - candidates for tooling
+
+**Claim counts drifted.** The log said ten, the amendment held eleven, and the implemented splits
+produced fourteen. See **I3**.
+
+**One slug changed in several homes.** The CSPRNG split changed the amendment, catalog,
+rationale, markers, and feedback. This repeats **C4**.
+
+### Thinking - never automate
+
+**The CSPRNG witness changed the claim again.** A lint rule that prohibits `Math.random` cannot
+prove that production uses Web Crypto. The implementation needed a positive test claim and a
+negative lint claim. See **I1**.
+
+**The expiry instant needed a ruling.** The original six-day and eight-day examples did not
+settle the exact seven-day boundary. The operator ruled that expiry starts at that instant.
+
+**A green canvass hid six false markers.** A fresh reviewer found implementations that violated
+the claims while every test still passed. The repaired tests now force the named mechanism and
+the exact boundaries. See **I4**.
+
+### Framework friction
+
+**The required configuration claim needed a second split.** A fresh audit marked the mixed type
+and test markers false. The operator separated context structure from runtime absence. See
+**I2**.
+
+### Re-derived at session start
+
+The implementation had to recover the marker grammar, project declarations, rationale grounding
+rules, and amendment lifecycle from the Crux repository. The tracker held no concise builder
+entrypoint for that material.

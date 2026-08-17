@@ -1,5 +1,5 @@
-<!-- @grounds core/entry/one-per-local-date -->
-<!-- @grounds core/entry/last-write-wins -->
+> @grounds core/entry/one-per-local-date
+> @grounds core/entry/last-write-wins
 
 # An entry is keyed by local date, and a second answer replaces the first
 

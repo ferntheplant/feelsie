@@ -1,4 +1,5 @@
-<!-- @grounds core/config/is-required-not-defaulted -->
+> @grounds core/config/is-context-service
+> @grounds core/config/is-required
 
 # The core is written in Effect
 
@@ -21,17 +22,19 @@ plain-TypeScript version would have shipped sooner.
 What tips it is that **the witness kind is part of the claim**, and Effect moves claims up the
 ladder that would otherwise sit in tests forever.
 
-- Configuration. `env.TZ ?? "UTC"` type-checks, never throws, silently misfiles every entry, and
-  leaves every date test passing. With the time zone as a service in the context, code that has
-  not been given one does not compile. The guarantee moves from kind 2 to kind 1.
+- Configuration. A context service makes the requirement structural, so a configured operation
+  cannot run without its layer. A separate test rejects absent runtime values and catches a
+  fallback such as `env.TZ ?? "UTC"`.
 - Failure. "An expired token is refused" is a test when failure is an exception and a much
   smaller test when failure is in the signature — the type says which errors a function can
   produce, and the compiler says whether the caller handled them.
 
+The implementation split configuration into context structure, runtime presence, and value
+validation. Each part now sits at the highest honest witness kind.
+
 The general form: an exception is invisible to the type system, so every claim about failure
-behaviour has to be a test. A typed error channel makes some of those claims structural. Crux
-pushes every claim as far up that ladder as it honestly goes, and this is a language-level move
-that raises the ceiling for the whole project at once.
+behavior needs a test. A typed error channel makes some claims structural. Crux pushes each claim
+as far up that ladder as it honestly goes.
 
 ## And the house rules arrive with witnesses attached
 
@@ -49,8 +52,9 @@ invisible if you evaluate Effect purely as a runtime library.
 
 ## Consequences
 
-**One existing house rule is retired.** "No floating promises" guards an empty set once nothing
-returns a bare promise; `floatingEffect` is its replacement and it is a better rule.
+**Effect values and promises have separate guards.** `floatingEffect` guards application
+programs. The promise rule remains for test runners and runtime adapters that call
+`Effect.runPromise`.
 
 **The toolchain meets the requirements, with no margin.** The linter needs Oxlint 1.77.0,
 TypeScript 7.0.2, and `oxlint-tsgolint` 7.0.2001. The catalog pins all three exact versions.
