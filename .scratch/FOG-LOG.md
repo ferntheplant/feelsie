@@ -260,3 +260,30 @@ cannot see what the reader of it will.
 - What had to be re-derived at the start of a session. Two sessions, contiguous.
 
 **The period ends when a pain point above repeats.** One occurrence is an anecdote.
+
+---
+
+## 2026-08-17 — F13, Effect rules through Vite+
+
+**The composition worked.** `@effect/tsgo` patched the same Oxlint binary and type-aware bridge
+that Vite+ invokes. A floating Effect in the sample app produced
+`effecttsgo/floating-effect` through `vp lint`. Removal of the violation restored a clean lint
+result.
+
+### Clerical — candidates for tooling
+
+**The supported version set needed four exact catalog entries and one repeatable patch command.**
+The Effect setup command can automate a standalone Oxlint configuration, but Vite+ owns that
+configuration inside `vite.config.ts`. The integration therefore needed manual edits across the
+catalog, root dependencies, the prepare script, and the Vite+ configuration.
+
+**One wrong configuration location existed in four documents.** F11, F13, C15, and the Effect
+rationale all said that rule severities lived in `tsconfig.json`. Current Effect documentation
+puts Oxlint severities in `vite.config.ts`. Correcting one fact in four places is another C4
+instance.
+
+### Thinking — never automate
+
+**The TypeScript and Oxlint diagnostic paths needed one owner.** The language service remains
+enabled for editor features, but its diagnostics are off. Oxlint owns diagnostics, so the same
+Effect finding does not appear twice.

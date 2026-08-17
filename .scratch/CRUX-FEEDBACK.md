@@ -202,6 +202,11 @@ the same shape: a fact recorded in two files, no tool that knows they are the sa
 | a project prefix and the package list     | which projects exist  | inventing F8 to proceed   |
 | a gate in an amendment and in its index   | which fog blocks what | a grep, after committing  |
 
+F13 produced a fourth instance. The proposed home for Effect rule severities was repeated in the
+fog item, F11's ruling, a rationale, and C15 before the experiment checked it. Current Effect
+documentation puts Oxlint severities in `vite.config.ts`, not `tsconfig.json`. Correcting that
+one fact required four manual edits. This strengthens the existing ruling and adds no new one.
+
 **For cairn.** The requirement is not a schema. It is that **the tracker holds each fact once and
 derives every view** — the sequence table, the gate column, the per-amendment header — rather
 than storing them alongside each other. Crux already works this way and says so: the marker index
@@ -422,7 +427,7 @@ The Effect team ships a type-aware linter with roughly eighty rules across corre
 anti-pattern, effect-native, and style categories, and it **emits them as Oxlint type-aware
 rules**. Belay already plans an Oxlint adapter. So the chain closes with nothing built:
 
-> rule id in `tsconfig.json` → marker on that line → Oxlint report → existing adapter → verdict
+> rule id in `vite.config.ts` → marker on that line → Oxlint report → existing adapter → verdict
 
 Every rule the project enables is a development claim with a working witness, at the cost of one
 comment. No custom rule, no adapter, and — per §8.3's explicit warning — no test that reads the
@@ -437,12 +442,13 @@ raises the ceiling for every claim in the project at once, and that is a reason 
 library that has nothing to do with the library's runtime behaviour. Feelsie chose Effect partly
 on this basis.
 
-**JSONC saves it, and §6.3 should say which files qualify.** `tsconfig.json` is where the rule
-severities are declared, and a `.json` extension implies no comments — §6.3's case for a file
-that cannot hold a marker. TypeScript reads it as JSONC, so it can. The same is true of
-`wrangler.jsonc`. Both of feelsie's config-hosted markers live in files that look unmarkable and
-are not, and §6.3's advice to "move the file to a format that takes comments" would have been
-followed unnecessarily in both cases.
+**The experiment corrected the marker home.** Early research put Effect rule severities in
+`tsconfig.json`. F13 showed that Oxlint severities live in `vite.config.ts`, which accepts normal
+comments. JSONC remains relevant to `wrangler.jsonc`, but Effect no longer supplies evidence for
+that part of §6.3.
+
+F13 also confirmed the main finding. `effecttsgo/floating-effect` denied a deliberate violation
+through `vp lint`, with the same report format and exit status as other Oxlint rules.
 
 ## C14 — A value held outside the repository pushes its claim up one level · `settled`
 

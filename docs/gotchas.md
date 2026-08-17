@@ -27,11 +27,13 @@ plan is required; this is not a case where the free plan is merely slower.
 
 ## Oxlint and Vite+
 
-**Oxlint is not pinned in this repository, and it sits exactly at the version the Effect linter
-requires.** It arrives transitively through `vite-plus`, currently at 1.77.0 against a floor of
-1.77.0. A Vite+ downgrade takes the type-aware rules with it, and the symptom is rules quietly
-not firing — no error, no failed build. If a lint rule you expect to deny stops denying, check
-the installed Oxlint version before you check your code.
+**The Effect integration patches installed Oxlint files.** The root `prepare` script reapplies
+the patch after each install. If an Effect rule stops denying code, run `vp install` before you
+debug the rule configuration.
+
+**The supported versions have no independent upgrade path.** The catalog pins `@effect/tsgo`,
+Oxlint, TypeScript, and `oxlint-tsgolint` to one supported set. Upgrade them as a set. The patch
+command rejects an unsupported combination before it changes the integration.
 
 **`oxlint --version` refuses to answer.** The binary in `node_modules/.bin` is an IDE wrapper for
 `--lsp` mode. Read the version from `pnpm-lock.yaml` or from `node_modules/.pnpm/` instead.

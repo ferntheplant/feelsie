@@ -12,13 +12,12 @@ clear when you can write the claim **and** assign its witness.
 
 ## Open
 
-| #           | Item                                                    | Clears by | Blocks                       |
-| ----------- | ------------------------------------------------------- | --------- | ---------------------------- |
-| [F1](#f1)   | Does `send_email` work in a `scheduled` handler?        | evidence  | A002                         |
-| [F2](#f2)   | Can a subdomain be onboarded with the apex MX intact?   | evidence  | the runbook, the real domain |
-| [F3](#f3)   | Does the daily mail land in the inbox?                  | evidence  | nothing structural           |
-| [F7](#f7)   | Line charts, or a calendar heat map?                    | judgment  | statistics in A003           |
-| [F13](#f13) | Does Effect's Oxlint patch compose with Vite+'s bridge? | evidence  | the lint-witness mechanism   |
+| #         | Item                                                  | Clears by | Blocks                       |
+| --------- | ----------------------------------------------------- | --------- | ---------------------------- |
+| [F1](#f1) | Does `send_email` work in a `scheduled` handler?      | evidence  | A002                         |
+| [F2](#f2) | Can a subdomain be onboarded with the apex MX intact? | evidence  | the runbook, the real domain |
+| [F3](#f3) | Does the daily mail land in the inbox?                | evidence  | nothing structural           |
+| [F7](#f7) | Line charts, or a calendar heat map?                  | judgment  | statistics in A003           |
 
 ---
 
@@ -62,28 +61,29 @@ using.
 `dashboard/shows-the-history` can be written without this. Any claim about _statistics_ cannot: a
 claim about a heat map and a claim about a line chart are not the same claim.
 
-### F13
-
-**Does Effect's Oxlint patch compose with the type-aware bridge Vite+ already ships?** ·
-evidence · blocks the lint-witness mechanism, not any amendment
-
-F12 answered the version question and left this one behind. `oxlint-tsgolint` is Oxc's own
-type-aware bridge and is what `typeAware: true` already drives. `@effect/tsgo` is Effect's
-TypeScript-Go fork carrying the Effect LSP, and it emits _additional_ Oxlint type-aware rules.
-Both are installed-or-installable at compatible versions; whether they stack has not been tried.
-
-Install `@effect/tsgo`, enable one rule in `tsconfig.json`, write code that violates it, run
-`vp lint`. If the diagnostic appears, every Effect rule id is a witness handle through the
-adapter belay already plans, and [C15](./CRUX-FEEDBACK.md) holds as written. If it does not, the
-rules still run under `tsc` and `@effect/tsgo diagnostics`, and a lint witness needs a second
-adapter reading that output — bounded, well-understood work, and a worse story than the one C15
-tells.
-
-Blocks no amendment. A001's claims are witnessed by types and tests either way.
-
 ---
 
 ## Cleared
+
+### F13 — Does Effect's Oxlint patch compose with Vite+'s bridge? · cleared by evidence
+
+**Yes.** `@effect/tsgo@0.36.5` patched the Oxlint 1.77.0 binary and the
+`oxlint-tsgolint@7.0.2001` bridge that Vite+ 0.2.9 uses. The root `prepare` script reapplies the
+patch after each install.
+
+The sample app now depends on `effect@4.0.0-rc.110`. A deliberate floating `Effect.log(...)`
+value produced this diagnostic through `vp lint`:
+
+```text
+apps/example/src/index.ts:4:3: error effecttsgo(floating-effect): This Effect value is neither yielded nor used in an assignment.
+```
+
+After removal of the violation, `vp lint` passed. Oxlint and the Effect rules use one command,
+one report format, and one exit status. C15's existing Oxlint adapter path therefore applies.
+
+The experiment corrected one premise. Oxlint rule severities belong in `vite.config.ts`, not
+`tsconfig.json`. The TypeScript configuration enables the language service with diagnostics off,
+which prevents duplicate reports. All compatibility-sensitive versions are exact catalog pins.
 
 ### F5 — Is there a free-text note on the form? · cleared by judgment
 
@@ -139,7 +139,7 @@ working today rather than waiting to be stood up.
 posed as "run an experiment"; it was answered in one grep. The tracker had no way to record that
 an evidence-gated item might be answerable without running anything.
 
-**Two things this leaves behind.**
+**What this left behind at the time.**
 
 **No headroom, and no control.** Oxlint sits at exactly the required floor, and it is transitive
 through `vite-plus` rather than pinned in the catalog — so a Vite+ downgrade breaks the
@@ -148,8 +148,9 @@ This is the failure mode [C15](./CRUX-FEEDBACK.md) is most exposed to, and it is
 development claim once those are written: _the type-aware lint pipeline is available_, witnessed
 by a rule that is expected to deny on a fixture.
 
-**A narrower question survives** as [F13](#f13): the version floor being met is not the same as
-Effect's patch composing with the bridge Vite+ ships.
+**A narrower question survived** as [F13](#f13): the version floor being met was not the same as
+Effect's patch composing with the bridge Vite+ ships. F13 later pinned the versions and confirmed
+the composition.
 
 ### F11 — What are the house rules, and is Effect-ts one? · cleared by judgment
 
@@ -171,9 +172,8 @@ Effect moves claims between witness kinds, and a claim's witness kind is part of
    left to write `?? "UTC"`.
 2. The development claims deferred in this item now have witnesses waiting for them. The Effect
    linter ships ~80 rules and emits them as Oxlint type-aware rules, so each rule this project
-   turns on is a lint witness with no adapter work and no custom rule — the marker goes on the
-   severity entry in `tsconfig.json`, which TypeScript reads as JSONC and which therefore takes
-   comments. Recorded as [C15](./CRUX-FEEDBACK.md).
+   turns on is a lint witness with no adapter work and no custom rule. The marker goes on the
+   severity entry in `vite.config.ts`. Recorded as [C15](./CRUX-FEEDBACK.md).
 
 Deferring those claims still stands. What changed is that they are now cheap and chosen rather
 than expensive and inherited, so the reason to defer is sequencing rather than doubt.

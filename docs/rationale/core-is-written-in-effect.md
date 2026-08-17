@@ -41,7 +41,7 @@ type-aware linter with roughly eighty rules, and it emits them as Oxlint type-aw
 A lint witness is a marker on the line that declares a rule id, and the join is a dictionary
 lookup on that id. So each rule this project turns on becomes a witness with **no adapter work,
 no custom rule, and no test that reads a config file** — the marker sits on the severity entry
-in `tsconfig.json`, which TypeScript reads as JSONC and which therefore takes comments.
+in `vite.config.ts`.
 
 The alternative was writing the same rules by hand, one custom Oxlint rule at a time, and each
 one is a small project with its own bugs. That is the true cost being avoided, and it is
@@ -52,16 +52,12 @@ invisible if you evaluate Effect purely as a runtime library.
 **One existing house rule is retired.** "No floating promises" guards an empty set once nothing
 returns a bare promise; `floatingEffect` is its replacement and it is a better rule.
 
-**The toolchain already meets the requirements, with no margin.** The linter needs Oxlint 1.77.0
-and TypeScript 7.0.2; this repository has exactly 1.77.0 and exactly 7.0.2, and it already runs
-Oxc's type-aware bridge under `typeAware: true`. Neither version is pinned here — Oxlint arrives
-transitively through `vite-plus` — so a toolchain downgrade would disable these witnesses by
-having rules quietly stop firing, which is the one direction that does not announce itself. That
-deserves a development claim of its own once those are written.
+**The toolchain meets the requirements, with no margin.** The linter needs Oxlint 1.77.0,
+TypeScript 7.0.2, and `oxlint-tsgolint` 7.0.2001. The catalog pins all three exact versions.
 
-Whether Effect's Oxlint patch stacks on the bridge Vite+ ships is untried, and is tracked as
-F13. If it does not, the rules still run under `tsc` and `@effect/tsgo diagnostics` and a lint
-witness needs a second adapter — work, but not a threat to this decision.
+F13 confirmed that Effect's patch composes with the bridge Vite+ ships. `vp lint` emitted an
+`effecttsgo/floating-effect` denial from the sample app. The root `prepare` script reapplies the
+patch after each install, and the patch validates the supported versions before replacement.
 
 **This is a day-one decision on purpose.** Adopting Effect after `packages/core` exists means
 rewriting its claims and re-auditing every witness attesting them, because a claim whose witness
