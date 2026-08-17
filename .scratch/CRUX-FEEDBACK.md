@@ -83,9 +83,10 @@ field is not metadata to fill in later — it is the step that finishes the clai
 gate already says so ("write the claim **and** assign its witness"). The tracker should enforce
 what the gate already states.
 
-## C4 — Cairn owns the slug namespace, because nothing else exists yet · `open` (for cairn)
+## C4 — Cairn owns the cross-references, because nothing else does · `repeated` — for cairn
 
-Two symptoms, one cause.
+Three symptoms, one cause: **every cross-reference in this tracker is maintained by grep and
+hope.**
 
 **The project list must exist before the first slug can be written.** A slug prefix names a
 project and a prefix naming no project is misfiled, so authoring the very first claim required
@@ -97,8 +98,29 @@ slugs that live only in the tracker. Crux would catch a dangling `@attests`; it 
 this, because per C2 the claim legitimately does not exist yet. So the correspondence between
 what a rationale grounds and what an amendment proposes is maintained by grep and hope.
 
-Cairn is the only artifact present at the moment a slug is first written, so it is the only
-thing that can own either.
+**A cleared fog item leaves stale gates behind, and this one shipped.** F11 was cleared and A001
+unblocked, and `amendments/README.md` was left saying A001 was gated by F11 — in two places. It
+was committed that way and found by a grep afterwards. Nothing failed, nothing warned, and the
+tracker's own index disagreed with the amendment it indexed.
+
+That is the third instance and it is what moves this from `open` to `repeated`. All three have
+the same shape: a fact recorded in two files, no tool that knows they are the same fact.
+
+| Instance                                  | The duplicated fact   | Found by                  |
+| ----------------------------------------- | --------------------- | ------------------------- |
+| a slug in a rationale and in an amendment | the claim's name      | a hand-written shell loop |
+| a project prefix and the package list     | which projects exist  | inventing F8 to proceed   |
+| a gate in an amendment and in its index   | which fog blocks what | a grep, after committing  |
+
+**For cairn.** The requirement is not a schema. It is that **the tracker holds each fact once and
+derives every view** — the sequence table, the gate column, the per-amendment header — rather
+than storing them alongside each other. Crux already works this way and says so: the marker index
+is derived on every run and stored nowhere, and a witness needs no stable identity because every
+question about it is answered by a diff. A tracker that stores a gate in two places has taken on
+a consistency problem crux deliberately does not have.
+
+Cairn is also the only artifact present at the moment a slug is first written, so it is the only
+thing that could own the namespace either.
 
 ## C5 — An authorable amendment has nowhere to live before there is a branch · `open`
 

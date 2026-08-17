@@ -179,6 +179,32 @@ of failure crux's dead-scope check exists to catch for `@scope`, and there is no
 lint rule whose engine disappeared beneath it. Recorded against **C15**, which is the finding it
 undermines.
 
+---
+
+## 2026-08-17, at the commit — a stale gate shipped
+
+Committing the tracker surfaced the second repeat, and this one by failing rather than by
+noticing.
+
+`amendments/README.md` claimed A001 was gated by F11, in the sequence table and again in the
+prose. F11 had been cleared earlier in the session and `001-the-core.md` correctly said "gated by
+nothing". **The index disagreed with the thing it indexed, and it was committed that way** — no
+error, no hook complaint, found by a grep run for an unrelated reason a minute later.
+
+This is the third instance of one shape: a fact written in two files with nothing that knows they
+are the same fact. The other two were a claim slug living in both a rationale and an amendment,
+and the project list existing only as an assumption. Written up as **C4**, now `repeated`.
+
+**The two repeats point the same way.** C16 says a fog item must record what would clear it. C4
+says the tracker must hold each fact once and derive every view. Neither is a schema for claims,
+which is what a tracker looks like it should be. Both are about **the tracker's own consistency**,
+which is the part that was invisible until the thing existed and had to be maintained.
+
+Worth noting that crux itself does not have this problem and says why: the marker index is
+derived on every run and stored nowhere, and a witness needs no stable identity because a diff
+answers every question about it. The by-hand tracker took on a class of bug the format it serves
+deliberately avoids.
+
 ### Not yet observed
 
 - A claim that had to be reworded after its witness was **built**. No code yet.

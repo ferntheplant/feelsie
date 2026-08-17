@@ -10,7 +10,7 @@ All of these are **proposed**. An amendment is enacted by the merge, and nothing
 
 | #                                  | Unit                           | Project     | Gated by |
 | ---------------------------------- | ------------------------------ | ----------- | -------- |
-| [001](./001-the-core.md)           | config, tokens, dates, entries | `core`      | **F11**  |
+| [001](./001-the-core.md)           | config, tokens, dates, entries | `core`      | —        |
 | [002](./002-the-checkin-worker.md) | cron, form, mail               | `checkin`   | 001, F1  |
 | [003](./003-the-dashboard.md)      | history and statistics         | `dashboard` | 001, F7  |
 | [004](./004-the-backup.md)         | D1 → R2                        | `checkin`   | 002      |
@@ -51,7 +51,13 @@ nothing, so their answer is rederivable from a checkout. Every test in 002 and 0
 The repository root is a project like any other when it holds claims of its own, and here it is
 called `root` (crux spells it `workspace`; see [C12](../CRUX-FEEDBACK.md)).
 
-It holds nothing today. Every claim here belongs to `core`, `checkin`, or `dashboard`. The
-repository's house rules — Conventional Commits, `vp run ready` as the gate, no `../` imports,
-no `any`, no floating promises — are all `@kind development` claims waiting to be written, and
-they are deliberately deferred until the rules themselves are settled (**F11**).
+It holds nothing today. Every claim here belongs to `core`, `checkin`, or `dashboard`.
+
+The repository's house rules are all `@kind development` claims waiting to be written, and F11
+settled what they will be: Effect-native patterns, carried by the Effect linter's rule ids. They
+are still deferred, but the reason changed — it is sequencing now, not doubt. Writing them needs
+the rules turned on, and turning them on needs [F13](../fog.md) answered.
+
+One of them is already identifiable and is not an Effect rule: the type-aware lint pipeline must
+be available at all, since the whole mechanism rests on an Oxlint version this repository does
+not pin. See [C15](../CRUX-FEEDBACK.md).
