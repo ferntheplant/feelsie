@@ -13,6 +13,7 @@ catalog:
   "@commitlint/cli": ^21.2.1
   "@commitlint/config-conventional": ^21.2.0
   "@effect/tsgo": 0.36.5
+  "@effect/vitest": 4.0.0-rc.110
   "@types/node": ^24
   effect: 4.0.0-rc.110
   oxlint: 1.77.0
@@ -38,6 +39,7 @@ peerDependencyRules:
 
 minimumReleaseAgeExclude:
   - effect@4.0.0-rc.110
+  - "@effect/vitest@4.0.0-rc.110"
 
 allowBuilds:
   msgpackr-extract: false

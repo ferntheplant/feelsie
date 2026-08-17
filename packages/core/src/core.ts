@@ -3,7 +3,8 @@ import { Clock, DateTime, Effect, Option } from "effect";
 import { CoreConfig } from "./config.ts";
 import { Database, type SqlRow } from "./database.ts";
 import { DatabaseError, PromptExpiredError, PromptNotFoundError, TokenDateMismatchError } from "./errors.ts";
-import type { Entry, EntryInput, LocalTime, Prompt } from "./model.ts";
+import { LocalDate, Measure, Timestamp, Token } from "./model.ts";
+import type { EntryInput, LocalTime, Prompt } from "./model.ts";
 
 const sevenDaysInMilliseconds = 7 * 24 * 60 * 60 * 1_000;
 
@@ -12,17 +13,17 @@ const encodeBase64Url = (bytes: Uint8Array): string => {
   return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
 };
 
-export const generateToken: Effect.Effect<string> = Effect.sync(() => {
+export const generateToken: Effect.Effect<Token> = Effect.sync(() => {
   const bytes = new Uint8Array(32);
   globalThis.crypto.getRandomValues(bytes);
-  return encodeBase64Url(bytes);
+  return Token(encodeBase64Url(bytes));
 });
 
 const localTimeAt = (now: number, timeZone: string): LocalTime => {
   const zoned = DateTime.setZone(DateTime.makeUnsafe(now), DateTime.zoneMakeNamedUnsafe(timeZone));
   const parts = DateTime.toParts(zoned);
   return {
-    date: DateTime.formatIsoDate(zoned),
+    date: LocalDate(DateTime.formatIsoDate(zoned)),
     hour: parts.hour,
   };
 };
@@ -65,17 +66,17 @@ const decodePrompt = (row: SqlRow): Effect.Effect<Prompt, DatabaseError> =>
       }
 
       return {
-        date,
-        token,
-        sentAt,
-        expiresAt,
-        ...(typeof answeredAt === "number" ? { answeredAt } : {}),
+        date: LocalDate(date),
+        token: Token(token),
+        sentAt: Timestamp(sentAt),
+        expiresAt: Timestamp(expiresAt),
+        ...(typeof answeredAt === "number" ? { answeredAt: Timestamp(answeredAt) } : {}),
       };
     },
     catch: (cause) => new DatabaseError({ cause, operation: "decode prompt" }),
   });
 
-const decodeEntry = (row: SqlRow): Effect.Effect<Entry, DatabaseError> =>
+const decodeEntry = (row: SqlRow): Effect.Effect<EntryInput, DatabaseError> =>
   Effect.try({
     try: () => {
       const date = row.date;
@@ -95,10 +96,10 @@ const decodeEntry = (row: SqlRow): Effect.Effect<Entry, DatabaseError> =>
       }
 
       return {
-        date,
-        mood,
-        energy,
-        sleep,
+        date: LocalDate(date),
+        mood: Measure(mood),
+        energy: Measure(energy),
+        sleep: Measure(sleep),
         ...(typeof note === "string" ? { note } : {}),
       };
     },
@@ -108,14 +109,14 @@ const decodeEntry = (row: SqlRow): Effect.Effect<Entry, DatabaseError> =>
 export const createPrompt: Effect.Effect<Prompt, DatabaseError, CoreConfig | Database> = Effect.gen(function* () {
   const config = yield* CoreConfig;
   const database = yield* Database;
-  const sentAt = yield* Clock.currentTimeMillis;
+  const sentAt = Timestamp(yield* Clock.currentTimeMillis);
   const localTime = localTimeAt(sentAt, config.timeZone);
   const token = yield* generateToken;
   const prompt = {
     date: localTime.date,
     token,
     sentAt,
-    expiresAt: sentAt + sevenDaysInMilliseconds,
+    expiresAt: Timestamp(sentAt + sevenDaysInMilliseconds),
   } satisfies Prompt;
 
   yield* database.batch([
@@ -129,9 +130,13 @@ export const createPrompt: Effect.Effect<Prompt, DatabaseError, CoreConfig | Dat
 });
 
 export const answerPrompt = (
-  token: string,
+  token: Token,
   entry: EntryInput,
-): Effect.Effect<Entry, DatabaseError | PromptExpiredError | PromptNotFoundError | TokenDateMismatchError, Database> =>
+): Effect.Effect<
+  EntryInput,
+  DatabaseError | PromptExpiredError | PromptNotFoundError | TokenDateMismatchError,
+  Database
+> =>
   Effect.gen(function* () {
     const database = yield* Database;
     const row = yield* database.first({
@@ -177,7 +182,7 @@ export const answerPrompt = (
     return entry;
   });
 
-export const readEntry = (date: string): Effect.Effect<Option.Option<Entry>, DatabaseError, Database> =>
+export const readEntry = (date: LocalDate): Effect.Effect<Option.Option<EntryInput>, DatabaseError, Database> =>
   Effect.gen(function* () {
     const database = yield* Database;
     const row = yield* database.first({
@@ -185,7 +190,7 @@ export const readEntry = (date: string): Effect.Effect<Option.Option<Entry>, Dat
       parameters: [date],
     });
     return yield* Option.match(row, {
-      onNone: () => Effect.succeed(Option.none<Entry>()),
+      onNone: () => Effect.succeed(Option.none<EntryInput>()),
       onSome: (value) => decodeEntry(value).pipe(Effect.map(Option.some)),
     });
   });

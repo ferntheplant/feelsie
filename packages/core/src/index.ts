@@ -18,4 +18,5 @@ export {
   PromptNotFoundError,
   TokenDateMismatchError,
 } from "./errors.ts";
-export type { Entry, EntryInput, LocalTime, Prompt } from "./model.ts";
+export { LocalDate, Measure, Timestamp, Token } from "./model.ts";
+export type { EntryInput, LocalTime, Prompt } from "./model.ts";

@@ -3,7 +3,7 @@ import { DatabaseSync } from "node:sqlite";
 
 import { Effect, Option } from "effect";
 
-import { DatabaseError } from "#core";
+import { Database, DatabaseError } from "#core";
 import type { DatabaseShape, SqlRow, SqlStatement } from "#core";
 
 const migration = readFileSync(new URL("../../migrations/0001-core.sql", import.meta.url), "utf8");
@@ -51,3 +51,12 @@ export const makeTestDatabase = (): TestDatabase => {
     },
   };
 };
+
+export const withTestDatabase = <A, E, R>(
+  use: (database: TestDatabase) => Effect.Effect<A, E, R>,
+): Effect.Effect<A, E, Exclude<R, Database>> =>
+  Effect.acquireUseRelease(
+    Effect.sync(makeTestDatabase),
+    (database) => use(database).pipe(Effect.provideService(Database, database.service)),
+    (database) => Effect.sync(() => database.raw.close()),
+  );
