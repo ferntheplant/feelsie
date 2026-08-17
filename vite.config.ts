@@ -22,7 +22,7 @@ export default defineConfig({
     sortPackageJson: true,
   },
   lint: {
-    plugins: ["typescript", "unicorn", "oxc"],
+    plugins: ["typescript", "unicorn", "oxc", "effecttsgo"],
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     ignorePatterns: IGNORE_PATTERNS,
     options: {
@@ -34,6 +34,7 @@ export default defineConfig({
       correctness: "error",
     },
     rules: {
+      "effecttsgo/floating-effect": "error",
       "vite-plus/prefer-vite-plus-imports": "error",
       "typescript/no-explicit-any": "error",
       "react/no-array-index-key": "error",

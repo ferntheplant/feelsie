@@ -1,4 +1,5 @@
 {
+  "$schema": "./node_modules/@effect/tsgo/schema.json",
   "compilerOptions": {
     "target": "ES2023",
     "lib": ["ES2023"],
@@ -20,7 +21,13 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitAny": true,
     "noEmit": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "plugins": [
+      {
+        "name": "@effect/language-service",
+        "diagnostics": false
+      }
+    ]
   },
   "include": [
     "apps/**/*.ts",

@@ -55,9 +55,9 @@ It holds nothing today. Every claim here belongs to `core`, `checkin`, or `dashb
 
 The repository's house rules are all `@kind development` claims waiting to be written, and F11
 settled what they will be: Effect-native patterns, carried by the Effect linter's rule ids. They
-are still deferred, but the reason changed — it is sequencing now, not doubt. Writing them needs
-the rules turned on, and turning them on needs [F13](../fog.md) answered.
+are still deferred, but the reason changed — it is sequencing now, not doubt. F13 confirmed the
+lint path and turned on `effecttsgo/floating-effect` as its probe.
 
-One of them is already identifiable and is not an Effect rule: the type-aware lint pipeline must
-be available at all, since the whole mechanism rests on an Oxlint version this repository does
-not pin. See [C15](../CRUX-FEEDBACK.md).
+One is already identifiable and is not an Effect rule: the type-aware lint pipeline must be
+available. Its compatibility-sensitive packages now have exact catalog pins. See
+[C15](../CRUX-FEEDBACK.md).

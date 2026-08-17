@@ -14,6 +14,9 @@
     "build": "vp pack",
     "test": "vp test run --reporter=minimal"
   },
+  "dependencies": {
+    "effect": "catalog:"
+  },
   "devDependencies": {
     "vite": "catalog:",
     "vite-plus": "catalog:"
