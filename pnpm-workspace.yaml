@@ -1,0 +1,33 @@
+packages:
+  - apps/*
+  - packages/*
+  - tools/*
+
+# `prefer` makes `vp add` reach for a catalog entry when one exists, so a second
+# package cannot silently land on a different version of a shared dependency.
+catalogMode: prefer
+
+# One version of every shared dependency, named once. Packages depend on
+# `catalog:` and never on a version range, so an upgrade is a one-line edit here.
+catalog:
+  "@commitlint/cli": ^21.2.1
+  "@commitlint/config-conventional": ^21.2.0
+  "@types/node": ^24
+  typescript: ^7.0.2
+  vite: npm:@voidzero-dev/vite-plus-core@0.2.9
+  vite-plus: 0.2.9
+  vitest: 4.1.10
+
+# Vite+ ships its own Vite core under an alias; the override keeps every
+# transitive `vite` on that same build rather than the public package.
+overrides:
+  vite: "catalog:"
+  vitest: "catalog:"
+
+peerDependencyRules:
+  allowAny:
+    - vite
+    - vitest
+  allowedVersions:
+    vite: "*"
+    vitest: "*"

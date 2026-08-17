@@ -1,0 +1,54 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+.vite
+coverage
+dist
+dist-ssr
+build
+*.local
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# dotenv environment variable files
+.env
+.env.*
+!.env.example
+
+# Editor directories and files
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# `CLAUDE.md` is a symlink to `AGENTS.md`, created by `scripts/link-agents.mjs` on install
+# rather than committed. `vp create` writes agent instruction files itself, before it installs,
+# and it refuses to work around a `CLAUDE.md` that is already there: generating from a template
+# that commits one dies with EEXIST (when it wants to symlink) or ENOENT (when the symlink it
+# finds is one degit has already broken). Leaving the path free is what keeps `vp create`
+# working; `prepare` fills it in either way.
+CLAUDE.md
+
+# AI agent state. `.claude/` is a symlink to `.agents/`, so git sees these paths
+# under `.agents/`; both spellings are listed so either resolution is covered.
+.agents/worktrees/
+.agents/settings.local.json
+.claude/worktrees/
+.claude/settings.local.json
+
+# fallow cache
+.fallow/
