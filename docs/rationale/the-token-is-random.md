@@ -1,4 +1,5 @@
-<!-- @grounds core/token/is-random -->
+<!-- @grounds core/token/uses-a-csprng -->
+<!-- @grounds core/token/is-32-bytes-base64url -->
 <!-- @grounds core/token/survives-answering -->
 <!-- @grounds core/prompt/expires-after-seven-days -->
 
