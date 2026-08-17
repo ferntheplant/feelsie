@@ -1,4 +1,3 @@
-// @attests core/config/is-context-service
 export { configLayer, decodeConfig } from "./config.ts";
 export {
   answerPrompt,

@@ -3,10 +3,16 @@ import { Config, ConfigProvider, Context, DateTime, Effect, Layer } from "effect
 import { ConfigValidationError } from "./errors.ts";
 import { makeCoreConfigValue, type CoreConfigValue } from "./model.ts";
 
+export const configEnvironmentVariables = {
+  mailDomain: "MAIL_DOMAIN",
+  sendHour: "SEND_HOUR",
+  timeZone: "TZ",
+} as const;
+
 const rawConfig = Config.unwrap({
-  mailDomain: Config.nonEmptyString("MAIL_DOMAIN"),
-  sendHour: Config.int("SEND_HOUR"),
-  timeZone: Config.string("TZ"),
+  mailDomain: Config.nonEmptyString(configEnvironmentVariables.mailDomain),
+  sendHour: Config.int(configEnvironmentVariables.sendHour),
+  timeZone: Config.string(configEnvironmentVariables.timeZone),
 });
 
 export class CoreConfig extends Context.Service<CoreConfig, CoreConfigValue>()("@feelsie/core/CoreConfig") {}
@@ -17,7 +23,7 @@ export const decodeConfig = (environment: Record<string, string | undefined>) =>
 
     if (raw.sendHour < 0 || raw.sendHour > 23) {
       return yield* new ConfigValidationError({
-        field: "SEND_HOUR",
+        field: configEnvironmentVariables.sendHour,
         value: String(raw.sendHour),
       });
     }
@@ -26,7 +32,7 @@ export const decodeConfig = (environment: Record<string, string | undefined>) =>
       Effect.mapError(
         () =>
           new ConfigValidationError({
-            field: "TZ",
+            field: configEnvironmentVariables.timeZone,
             value: raw.timeZone,
           }),
       ),
