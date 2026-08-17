@@ -1,3 +1,5 @@
+> @project root
+
 # Feelsie
 
 Records how you feel each day, and shows the history back to you.

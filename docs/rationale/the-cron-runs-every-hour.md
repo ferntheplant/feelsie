@@ -1,5 +1,4 @@
-<!-- @grounds core/local-date/is-zoned -->
-<!-- @grounds checkin/prompt/one-per-local-date -->
+> @grounds core/local-date/is-zoned
 
 # The cron runs every hour and the handler decides whether to send
 

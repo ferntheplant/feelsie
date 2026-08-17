@@ -1,8 +1,8 @@
 # Feelsie
 
 Sends one email a day, records mood, energy, and sleep from a link in it, and shows the history
-on a private page. Two Cloudflare Workers over one D1 database. **No code exists yet** — the
-repository holds the design and nothing else.
+on a private page. Two Cloudflare Workers use one D1 database. The core package exists. The
+Workers remain proposed.
 
 ## This project dogfoods crux
 
@@ -43,9 +43,9 @@ the running account in [`.scratch/FOG-LOG.md`](./.scratch/FOG-LOG.md).
 
 New writing goes to one of those homes from the start, and **nothing lives in two of them**.
 
-The catalog is empty, and stays empty until a witness affirms something — a claim enters in the
-merge that makes it true. Everything proposed lives in `.scratch/` instead: `fog.md` for what
-cannot yet be stated as a claim, `amendments/` for what can.
+The catalog contains only affirmed claims. A claim enters in the merge that makes it true.
+Everything proposed lives in `.scratch/`: `fog.md` for what cannot be stated as a claim, and
+`amendments/` for what can.
 
 ## House rules
 

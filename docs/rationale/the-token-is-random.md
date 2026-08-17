@@ -1,12 +1,18 @@
-<!-- @grounds core/token/uses-a-csprng -->
-<!-- @grounds core/token/is-32-bytes-base64url -->
-<!-- @grounds core/token/survives-answering -->
-<!-- @grounds core/prompt/expires-after-seven-days -->
+> @grounds core/token/uses-web-crypto
+> @grounds core/token/never-uses-math-random
+> @grounds core/token/is-32-bytes-base64url
+> @grounds core/token/authorises-one-date
+> @grounds core/token/survives-answering
+> @grounds core/prompt/expires-after-seven-days
 
 # The token is random and stored, not signed
 
 A token is 32 bytes from `crypto.getRandomValues`, encoded as base64url and written to the
 database beside its prompt.
+
+Thirty-two bytes give the token 256 bits of entropy. Base64url keeps the token compact and safe
+inside a URL without padding or escaping. `Math.random` is forbidden separately because a test
+that observes Web Crypto cannot prove that another token path never uses a weak source.
 
 The rejected option was an HMAC over the local date. It is stateless and it needs no row, which
 is genuinely attractive for a system whose whole database is two tables.
