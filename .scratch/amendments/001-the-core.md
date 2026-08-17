@@ -103,7 +103,14 @@ day. Under a context service there is no place to put that `??`: the value is ei
 the program does not compile.
 
 The test covers what the type cannot, which is a value that is present and wrong. Both are
-needed and neither is sufficient — see [C10](../CRUX-FEEDBACK.md).
+needed and neither is sufficient.
+
+**This claim is a candidate for splitting.** [C10](../CRUX-FEEDBACK.md) says a claim wanting two
+witnesses of different kinds is usually two claims, and this one fits: the type attests
+_availability_ and the test attests _validation_. Left whole here because the three values arrive
+by one mechanism and would be defaulted by one careless line — but if the witnesses ever
+disagree about what they are proving, split it into `core/config/is-required` and
+`core/config/is-validated`.
 
 The three sit in one claim because they arrive by the same mechanism and would be given a
 fallback by the same careless line.

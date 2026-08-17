@@ -7,8 +7,33 @@ without re-deriving the context.
 [`FOG-LOG.md`](./FOG-LOG.md) is the chronological diary and refers to these by number. This file
 is the authoritative statement of each one.
 
-**Status** is `settled` (decided here, port it), `open` (evidence recorded, no decision), or
-`watch` (one occurrence — needs a repeat before it means anything).
+**Status** is `settled` (decided here, port it), `repeated` (seen more than once, so it is
+evidence rather than anecdote), `open` (recorded, no decision), `watch` (one occurrence — needs a
+repeat before it means anything), or `retracted` (was wrong; kept because the correction is the
+finding).
+
+Entries are in the order they were found, not in numerical order. The index is the queue.
+
+| #   | Finding                                                     | Status      | Destination      |
+| --- | ----------------------------------------------------------- | ----------- | ---------------- |
+| C1  | a claim's subject must be rederivable from the repository   | `settled`   | crux §5          |
+| C2  | a rationale ships with the claims it grounds                | `settled`   | crux §11.5, §6.6 |
+| C3  | the witness assignment is where the design happens          | `open`      | cairn            |
+| C4  | cairn owns the cross-references                             | `repeated`  | cairn            |
+| C5  | an amendment has nowhere to live before there is a branch   | `settled`   | cairn            |
+| C6  | fog in the target repository pollutes product history       | `settled`   | cairn            |
+| C7  | an exit gate does work an open-questions list cannot        | `settled`   | evidence for §10 |
+| C8  | "claim, or settled by construction?" has no mechanical form | `settled`   | never automate   |
+| C9  | one prose sentence, two claims, two projects                | `watch`     | —                |
+| C10 | a claim needing two witnesses is two claims                 | `retracted` | crux §5.7        |
+| C11 | the root project holds development claims or none           | `watch`     | —                |
+| C12 | the root project is named `root`                            | `settled`   | crux §3.4, §2.2  |
+| C13 | fog can clear without producing anything                    | `watch`     | —                |
+| C14 | a value held outside the repository raises its claim        | `settled`   | crux §5          |
+| C15 | a third-party type-aware linter is a witness supply         | `settled`   | crux §5.2, §6.3  |
+| C16 | a fog item must record what would clear it                  | `repeated`  | cairn            |
+| C17 | markdown directives are invisible in rendered views         | `settled`   | crux §6.3        |
+| C18 | directive names collide with other ecosystems               | `settled`   | crux §6.1, §6.6  |
 
 ---
 
@@ -53,19 +78,79 @@ stronger than any draft — see the trail preserved in
 assume away. Both rest on _the repository is the only thing that changes between merges_; this
 states that assumption as a requirement instead of leaving it implicit.
 
-## C2 — A rationale may ground a claim that does not exist yet · `settled`
+## C2 — A rationale ships with the claims it grounds · `settled`
 
 Crux covers a rationale grounding a **deleted** claim: reported, not a form error, because the
 document is still true. It says nothing about grounding one that has not been written yet, and
 the orphan check does not reach it, because a grounding is not a marker.
 
 Feelsie produced six rationales before a single line of code, and every `@grounds` in them
-dangles forward. This is not an edge case — it is what reasoning-before-building looks like on
-day one, and it stays the common case in any repository where design precedes implementation.
+dangled forward.
 
-**The ruling.** Legal, and reported, exactly as the deleted case is, and for the same reason.
+**The first ruling was that this is legal and reported, like the deleted case. That was wrong**,
+and the reason it was wrong is the useful part. A rationale explains why a claim _reads as it
+does_. If the claim does not exist, the document is explaining a decision nobody has enacted —
+which is intent, and intent is the amendment's job. A rationale committed ahead of its claim is
+doing the amendment's work in the wrong artifact.
 
-**To port.** A second sentence in §11.5.
+**The ruling.** `@grounds` must resolve. A grounding naming no declared claim is a form error, in
+the same family as an orphaned marker.
+
+The mechanism needs nothing new. A claim is _declared_ by `@claim` on the branch; §4's condition
+— a sound witness affirms it — is enforced at the merge, not at declaration. So claim, witness,
+and rationale are authored on one branch and land in one merge, and `@grounds` resolves against
+declared slugs the whole time.
+
+### The asymmetry, and the principle under it
+
+- **forward dangle** — the claim is not declared → **form error**
+- **backward dangle** — the claim was later deleted → **reported, not an error** (§11.5 stands)
+
+These differ for a reason worth stating generally:
+
+> **A form error must be fixable by the person who caused it, at the moment they caused it.**
+
+The forward case is preventable while writing. The backward case is created by a later merge that
+cannot reach back into a document that was true when written.
+
+### The multi-amendment case, and how it resolves
+
+A rationale often grounds claims that land in different merges. Feelsie has one:
+`the-cron-runs-every-hour.md` grounds a `core` claim and a `checkin` claim, split by a **layer
+boundary** rather than by topic — the reasoning is one thought and the packages are two. Most
+architectural decisions look like this.
+
+Two rules were considered. _Ship the rationale with the last claim it grounds_ keeps the check
+strict and hides the document during the window when some of its claims are already live — which
+is exactly when a reader goes looking.
+
+**The adopted rule is the inverse:** write the rationale as soon as any claim needs it, and cite
+only the claims that exist. A later amendment adds its own `@grounds` line to the existing
+document. Nothing ever dangles, the check stays strict, and the reasoning is available from the
+first merge.
+
+It has a second-order benefit nobody was aiming at: **a rationale's `@grounds` list grows over
+time, and the growth is a signal.** A document that accumulates grounds is one whose decision
+turned out to be load-bearing across the system — information that writing the list upfront
+destroys.
+
+### The failure it accepts, stated plainly
+
+The later amendment writer may not find the earlier rationale, and then it under-grounds: it is
+about claim B, does not cite it, and "why is B the way it is?" returns nothing when an answer
+exists.
+
+**This is uncheckable by construction.** §11.1 already says a machine cannot tell _this document
+is about that claim_ from _this document mentions it_ — that is why `@grounds` exists. No form
+check reaches it and no audit reaches it, because a rationale is not an instrument.
+
+It is survivable because §11.3 already accepts that some rationales are found by reading the
+directory rather than by index, so under-grounding degrades to a baseline crux tolerates rather
+than to nothing. The case to watch is the layer-boundary one above, since that is where
+correlated claims reliably land in different merges.
+
+**To port.** §11.5 gains the forward case as an error and keeps the backward case as a report;
+§6.6 gains a form error for a grounding that names no declared claim.
 
 ## C3 — The witness assignment is where the design happens · `open` (for cairn)
 
@@ -94,9 +179,14 @@ inventing the package layout (`packages/core`, `apps/checkin`, `apps/dashboard`)
 and it blocked every other item in the tracker until it was guessed at.
 
 **Nothing checks a slug while the claim does not exist.** Six rationale files reference eight
-slugs that live only in the tracker. Crux would catch a dangling `@attests`; it cannot catch
-this, because per C2 the claim legitimately does not exist yet. So the correspondence between
-what a rationale grounds and what an amendment proposes is maintained by grep and hope.
+slugs that live only in the tracker, and the correspondence between what a rationale grounds and
+what an amendment proposes is maintained by grep and hope.
+
+**C2 closes this one, and it is the only one it closes.** Requiring `@grounds` to resolve to a
+declared claim means the rationale and the claim land together, so the window in which a slug
+lives in two unsynchronised places disappears. That leaves the other two instances untouched,
+which is the useful signal: the remaining duplication is between the tracker and the repository,
+and no rule inside the format can reach it.
 
 **A cleared fog item leaves stale gates behind, and this one shipped.** F11 was cleared and A001
 unblocked, and `amendments/README.md` was left saying A001 was gated by F11 — in two places. It
@@ -122,19 +212,50 @@ a consistency problem crux deliberately does not have.
 Cairn is also the only artifact present at the moment a slug is first written, so it is the only
 thing that could own the namespace either.
 
-## C5 — An authorable amendment has nowhere to live before there is a branch · `open`
+## C5 — An authorable amendment has nowhere to live before there is a branch · `settled`
 
-An amendment is held by the branch and enacted by the merge. Feelsie has five authorable
-amendments and no branch, so they sit in `.scratch/`. Direct evidence for the open thread on
-where the amendment lives: the answer cannot be "a file on the branch" alone, because amendments
-exist and are worth ordering before any work starts.
+An amendment is held by the branch and enacted by the merge. Feelsie has four authorable
+amendments and no branch, so they sit in `.scratch/`. The answer to _where does the amendment
+live_ cannot be "a file on the branch" alone, because amendments exist, and are worth ordering
+against each other, before any work starts.
 
-## C6 — Fog in the target repository interleaves with product history · `open`
+**Resolved together with C6: cairn holds its own state, outside the target repository.**
 
-`.scratch/` is committed for now, so every clarification of a fog item becomes a commit in
-feelsie, mixed with commits that change the product. This is the argument for a second
-repository keyed to the target, observed rather than predicted. Accepted deliberately until
-cairn has a design; revisit when a single fog item has churned three times.
+## C6 — Fog in the target repository pollutes product history · `settled`
+
+`.scratch/` is committed, so every clarification of a fog item is a commit in feelsie, interleaved
+with commits that change the product. Observed rather than predicted, and it is the argument for
+a second store keyed to the target.
+
+### What C5 and C6 settle jointly
+
+**Cairn keeps its state outside the repository it serves.** §12 already made this possible on
+purpose: _a tracker stores slugs and never claim text_, and whoever has the checkout resolves the
+slug. That is not a concession to an external tracker — it is the interface designed for one.
+
+**And the bill comes due immediately.** When fog lived in `.scratch/`, a slug rename was atomic
+with the code that caused it. Moving the tracker out breaks that atomicity, and C4's stale
+references get worse rather than better: the dangling reference now lives in a different system,
+on a different release cycle, that cannot see the rename happen.
+
+**So cairn needs a watcher, and it is a repair rather than a feature.** It checks out the target
+at `main`, runs crux, and warns about stale references in its own tickets and fog.
+
+Three constraints fall out:
+
+- **It holds no facts.** Re-derive from HEAD every run, like §9.3's supervisor. Kill it and
+  restart it and nothing is lost.
+- **It consumes what crux already emits.** §13.1's machine-form marker index. The interface is a
+  file, not an API, and crux learns nothing about cairn.
+- **The warnings point one way only.** Cairn warns about cairn's references, never about the
+  repository. The repository is authoritative. A watcher reporting _into_ the repository would
+  quietly create the dependency §12's one hard line forbids.
+
+**The symmetry is worth naming out loud.** C1 ruled that reality drifting from the repository is
+_monitoring, not review_ — scheduled rather than diff-triggered, with no pull request to attach a
+verdict to — and pushed it out of crux. The watcher is monitoring, for tracker drift from the
+repository. Same shape, different subject, excluded from crux for the identical reason, and
+landing in cairn because cairn is the thing that can be wrong.
 
 ## C7 — A fog item's exit gate does work an open-questions list cannot · `settled`
 
@@ -168,19 +289,37 @@ altitudes, neither implying the other, and no honest single witness spanning bot
 A granularity signal. One occurrence; needs a repeat before it says anything about where the
 right altitude is.
 
-## C10 — A claim can need two witnesses of different kinds to be honest · `watch`
+## C10 — A claim that needs two witnesses is two claims · `retracted`, then rewritten
 
-§5.7 covers one marker attesting several claims. The inverse showed up twice here and is not
-discussed: a claim where **neither witness alone attests it**.
+**The original finding was wrong.** It claimed crux had a gap: a claim where neither witness
+alone attests it, which §5.7 does not discuss. Both of its examples fail.
 
-- `core/token/is-random` — the test cannot distinguish a CSPRNG from a good PRNG, so on its own
-  it affirms a token generated by `Math.random`. The lint rule closes that and the test cannot.
-- `backup/lands-in-r2` — the test proves the code _can_ back up; only observation proves it
-  _has_. A green test over an empty bucket is the exact failure the claim exists to catch.
+- `core/token/is-random` — the claim was _32 bytes from a CSPRNG, base64url_, and the proposed
+  pair was a lint rule plus a test. But the lint rule attests **no weak randomness** and the test
+  attests **shape**. Those are two claims wearing one slug: `token/uses-a-csprng` and
+  `token/is-32-bytes-base64url`, one honest witness each.
+- `backup/lands-in-r2` — already dissolved by C1 and rewritten to
+  `checkin/backup/writes-a-restorable-export`, witnessed by one local test. The finding was left
+  standing on the deleted version.
 
-Distinct from §5.7's coupling problem, which is about one witness serving many claims. This is
-many witnesses required by one claim, and the readout's one-row-per-claim shape has no obvious
-place to say "both of these, or neither".
+**The correct finding is the inverse of what was written**, and it is more useful:
+
+> **A claim that appears to need two witnesses of different kinds is a claim that should be
+> split — or one whose second half is out of scope.**
+
+It is the mirror of §5.7. That warns about one marker carrying many claims, and the diagnosis is
+that the claims are coupled. This warns about one claim needing many markers, and the diagnosis
+is that the claim is compound.
+
+It held a third time on a claim written later in the same session.
+`core/config/is-required-not-defaulted` was given a type witness _and_ a test witness, and they
+answer different questions: the type says code cannot run without the configuration, the test says
+a present-but-invalid value is rejected. **Availability and validation.** Two claims.
+
+Three for three, in three different directions — a compound predicate, an out-of-scope subject,
+and two distinct properties sharing a name. Splitting is the answer every time.
+
+**To port.** A paragraph beside §5.7, since the two are the same observation from opposite ends.
 
 ## C11 — The root project may hold no claims at all · `watch`
 
@@ -192,22 +331,28 @@ lint rules, the gate), and this project has deferred them (F11).
 Not a defect. Worth knowing that an application repository may reach a working catalog without
 ever using the prefix, where a tool monorepo like crux's own uses it immediately.
 
+**Confirmed by the author: root claims are expected to be mostly development-kind.** One nuance
+that survives — it is a correlation, not an identity. A package holds development claims too
+(`core` will have its own lint rules), so `@kind` stays non-derivable from the slug prefix and
+earns its place as a directive.
+
 ## C12 — The root project is named `root`, not `workspace` · `settled` (against crux)
 
 §3.4 chose `workspace` over `root` on the grounds that the document already uses _root_ to mean
 a position rather than a thing. Feelsie's author — who is also crux's — preferred `root` on
 first contact with the name, so this project uses `root/`.
 
-**The stated objection is real and survives the decision.** The prose in this repository says
-"the repository root" and "the root project" within a page of each other, and the reader
-disambiguates from context every time. What the collision costs in practice is not yet known,
-because no `root/` claim exists here yet (C11) — so this is a divergence recorded at the moment
-it was chosen, to be judged when the prefix is actually in use.
+**The objection was put to the author and dismissed on the merits**: "the repository root" and
+"the root project" read as the same thing, and the thing does not need disambiguating from the
+position. That is a defensible reading — the root project _is_ the project at the root, so the
+overload is a description rather than a pun.
 
 The interesting part is not which word wins. It is that the first consumer of the vocabulary
-rejected a settled naming decision on sight, and §2.2 exists precisely so that rejected words
-are not re-proposed. If crux adopts `root`, §3.4's reasoning should be moved into §2.2 as a
-rejected word with its argument intact, rather than deleted.
+rejected a settled naming decision on sight, and then rejected the argument for it a second time
+when it was restated. §2.2 exists precisely so that rejected words are not re-proposed, which
+makes the follow-through mechanical: **if crux adopts `root`, `workspace` goes into §2.2 with
+§3.4's argument attached.** Deleting the reasoning would leave the next person free to propose
+`workspace` again, which is the exact failure §2.2 was built to prevent.
 
 ## C13 — Fog can clear without producing anything · `watch`
 
@@ -223,6 +368,15 @@ nothing to the catalog, the rationale directory, or the tracker. It simply stopp
 Worth watching whether this is common. If it is, a tracker needs a disposition for _answered,
 already covered_ that does not look like an abandoned item — and the fact that an existing claim
 answered it is a small piece of evidence that the claim was written at the right altitude.
+
+**Put to the author, who declined to model it**, and that is the right call twice over. §11.2's
+three tests reject writing a rationale for the refusal — it is cheap to reverse, nobody would be
+surprised, and no alternative was examined — so declining generates nothing, correctly.
+
+And note what crux does with "not now": **nothing.** It is not fog, because §10 is explicit that
+inability rather than unwillingness is the test, and admitting unwillingness is precisely how fog
+degrades into a backlog. It is not an amendment. It is not a rationale. A framework that produced
+a ticket here would be worse; the absence of an artifact is the feature.
 
 ## C16 — A fog item must record what would clear it · `repeated` — for cairn
 
@@ -310,3 +464,127 @@ ever checked one string.
 delete the claim — raise it until it is about how the value is used rather than what it is. C1
 deletes a claim whose _state_ lives outside; this rewrites a claim whose _data_ does. The two
 are easy to confuse and they have opposite remedies.
+
+## C17 — Markdown directives are invisible in every rendered view · `settled`
+
+§6.3 says Markdown uses the same rule "in an HTML comment. Not frontmatter." The rejection of
+frontmatter is sound — the core would learn a second format and a rule for when to apply which.
+But the _choice of HTML comment_ was never weighed against visible alternatives, and it has a
+cost §6.3 does not mention.
+
+**An HTML comment renders as nothing.** In GitHub, in an editor preview, in any docs site, the
+directives are gone. For a rationale that is mildly annoying. For the catalog it is worse: the
+slug is the identifier you cite in a pull request, a ticket, and a conversation, and the artifact
+humans read most is the one that hides its own identifiers.
+
+Found by reading feelsie's own rationale files in a Markdown viewer and seeing no `@grounds` at
+all.
+
+**§6.1 already permits the fix**, because it tolerates leading noise — that is how
+`* @attests foo/bar` works inside a JSDoc block. Only _trailing_ junk breaks a directive,
+since the token is whitespace-delimited.
+
+| Form                       | Renders as        | Scans?                                   |
+| -------------------------- | ----------------- | ---------------------------------------- |
+| `<!-- @claim foo/bar -->`  | **nothing**       | yes                                      |
+| `` `@claim foo/bar` ``     | code span         | **no** — the token becomes ``foo/bar` `` |
+| `## @claim foo/bar`        | heading, anchored | yes, but fights `@kind` (see below)      |
+| `> @claim foo/bar`         | blockquote        | yes                                      |
+| a ` ```crux ` fenced block | code block        | yes                                      |
+
+The inline-code form is the trap: it looks like the obvious answer and silently corrupts the
+token, because no whitespace precedes the closing backtick.
+
+The heading form is tempting — every claim would get a TOC entry and an anchor to link at — but
+a block is a contiguous run of directive lines, and Markdown wants a blank line after a heading,
+which terminates the block. `@kind` would have to sit immediately under the heading with no blank
+line, rendering as a stray paragraph.
+
+**Recommended: the blockquote.** It carries multi-directive blocks, renders as a visually
+distinct band that reads as metadata, and needs no change to crux at all. The cost is the
+per-claim anchor, which is cheaper than the alternative — duplicating the slug into a heading is
+C4 all over again.
+
+**To port.** §6.3 should say that a Markdown marker may use any construct leaving the directive
+line's trailing token intact, and should note the invisibility cost of the HTML comment. The
+one-token rule is what makes this a free choice for each repository rather than a format change.
+
+## C18 — Directive names collide with other ecosystems · `settled`
+
+Crux is a line scanner that never learns comment syntax, so it matches `@name` + whitespace +
+token wherever it appears. That is the property that keeps the core small, and it means the six
+directive names are shared with every other tool that had the same idea.
+
+**The one-token rule immunises most of what looks dangerous.** Anything where the next character
+is not whitespace cannot match: `@scope/package` in an import, `` `@grounds` `` in prose,
+`@Claim("groups")` in MicroProfile JWT.
+
+**The real collisions are where a lookalike is genuinely followed by a space:**
+
+| Directive  | Collides with                            | Real?                       |
+| ---------- | ---------------------------------------- | --------------------------- |
+| `@kind`    | JSDoc `@kind class`                      | documented tag, in the wild |
+| `@scope`   | CSS `@scope (.card) { … }`               | shipped at-rule             |
+| `@end`     | Objective-C `@end`, Texinfo `@end table` | language keyword            |
+| `@claim`   | prose documenting crux                   | see below                   |
+| `@attests` | nothing found                            | —                           |
+| `@grounds` | nothing found                            | —                           |
+
+**The pattern is the finding.** The four ordinary English words all collide and the two unusual
+ones are clean. `@attests` and `@grounds` are safe precisely because nobody else reaches for
+them. That extends §2.1's naming rule into a domain it was not written for: **an unusual word is
+collision-resistant, and a common one is a shared namespace with every tool that named the same
+concept.**
+
+### Three of the four fail safe. One does not.
+
+`@kind` and `@scope` are attributes, and an attribute only means anything inside a block — so a
+CSS file with no opener is inert. **That is the intended reading and the spec does not say it.**
+§6.6 lists "a `@kind` outside `capability` and `development` is unknown" without scoping the
+check to blocks, and a naive implementation would fire on every JSDoc `@kind class` in the
+repository.
+
+A spurious `@claim` produces a claim nothing attests → unattested → red. Loud, and fixed by
+rewording.
+
+**`@end` is the unsafe one.** §6.2 is explicit that under-extension is the single failure that
+lets a false witness survive, and a stray `@end` truncates a real marker's extent early and
+silently. It is also the least-used directive, so a broken extent is the least likely to be
+noticed.
+
+### The three fixes
+
+**1. Suffix the terminator with the opener it closes.** `@end` stops being a directive; the
+closers become `@claim:end`, `@attests:end`, `@grounds:end`. This kills the Objective-C and
+Texinfo collisions outright, and the closer becomes checkable against the opener that is actually
+open.
+
+Three notes. Spell them with the _opener tokens_, not construct names — `@witness:end` and
+`@rationale:end` would reintroduce two words §2.2 deliberately killed. Two of the three are
+vacuous (a grounding's extent is inert, and a catalog file is sequential prose where the default
+extent is already right), so `@attests:end` is the only one that does work; allow all three
+anyway for regularity. And the real implementation cost is the tokenizer: matching the name as
+`@(\w+)` would parse `@claim:end` as `@claim` with the token `:end`, so the name pattern must
+admit a colon. That is the one place the format has no give, so it should be deliberate.
+
+**2. An attribute its opener does not take is a form error.** Closes the reachable edge where a
+JSDoc `@kind` sits contiguous with a real `@attests` block — currently unspecified, since `@kind`
+is not an opener so the block is not _mixed_. One line, and it makes the case loud instead of
+silently doing something.
+
+**3. A token containing `<`, `>`, or a backtick is not a directive.** This is the fix for prose,
+and the population is larger than it looks: it is not only crux's own spec, it is **every
+adopting repository's `AGENTS.md`**, because explaining the format to your agents means writing
+`@claim <slug>` somewhere. Day one, every adopter.
+
+Keep the character set narrow on purpose. A broader "any invalid slug charset is ignored" would
+swallow a typo'd real slug — a stray capital, say — and that is under-detection, the one
+direction §8.2 forbids. `<`, `>`, and backtick never appear in a typo of a real slug, so the
+narrow rule has no false-negative surface at all.
+
+**Crux's own `ABSTRACT.md` needs this today.** §6.1's directive table contains the cell
+`` `@claim <slug>` ``, which scans as a declaration with the slug `` <slug>` `` and reports as
+misfiled. The document defining the format currently fails it.
+
+**To port.** §6.1 gains the colon in the name pattern and the `<`/`>`/backtick exclusion; §6.2
+replaces `@end` with the three suffixed closers; §6.6 gains the attribute-mismatch error.

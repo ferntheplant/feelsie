@@ -46,7 +46,8 @@ assignment, not the claim text, is where the design happened — three times, in
 
 Recorded as **C1** (out-of-repo subjects), **C2** (forward-dangling `@grounds`), **C5** (an
 amendment with no branch to live on), **C6** (fog churning in the product's history), **C10** (a
-claim needing two witnesses to be honest), **C11** (a root project with no claims).
+claim needing two witnesses to be honest — later retracted), **C11** (a root project with no
+claims).
 
 ### One thing crux got exactly right
 
@@ -204,6 +205,53 @@ Worth noting that crux itself does not have this problem and says why: the marke
 derived on every run and stored nowhere, and a witness needs no stable identity because a diff
 answers every question about it. The by-hand tracker took on a class of bug the format it serves
 deliberately avoids.
+
+---
+
+## 2026-08-17, after the commit — discussion, and four findings that came from nothing
+
+A session with no artifact in front of it. The tracker was committed and the conversation moved
+to what it implied for crux. Four things came out, and **three of them could not have been found
+by doing the work** — they came from reading the work back.
+
+**C17 was found by opening a file in a Markdown viewer.** Every `@grounds` in
+`docs/rationale/` is invisible in every rendered view, because §6.3 chose HTML comments. Doing
+the work never surfaces it; the directives are right there in the editor. It took looking at the
+output the way a reader would.
+
+**C18 was found by asking "what if the repo needs these words?"** — a question with no prompt in
+the work at all. The answer had a shape nobody predicted: the four ordinary English words all
+collide with real ecosystems, and the two unusual ones are clean. And the collision that matters
+is not the likely one. `@kind` and `@scope` are the plausible collisions and both fail safe;
+`@end` is the far-fetched one and it is the only one that fails _unsafely_, because a stray
+terminator under-extends a marker and §6.2 says that is the one direction that lets a false
+witness survive.
+
+**C10 was retracted, and the retraction is better than the finding.** Both of its examples were
+wrong, and one was wrong because of a change made earlier in the same session that I did not
+propagate. The correct version — a claim wanting two witnesses of different kinds is two claims —
+then held on a third case, one written _after_ the original finding. Worth recording that the
+error survived being written down, committed, and summarised, and died the first time someone
+argued with it.
+
+**C2 reversed.** The original ruling let `@grounds` dangle forward; the reversal makes it a form
+error and ships the rationale with its claims. That closes exactly one of C4's three instances,
+which is itself the useful signal: the remaining duplication is between the tracker and the
+repository, and no rule inside the format can reach it. That is what cairn is for.
+
+### What this says about the clerical/thinking split
+
+The split was drawn as _transcription is clerical, judgment is thinking_. This session does not
+fit either column. Nothing was transcribed and nothing was decided about feelsie — the entire
+output was **finding errors and gaps in the framework by re-reading artifacts already produced**.
+
+Three of the four came from adopting a reader's position rather than a writer's: opening the file
+in a viewer, asking what a foreign repository would contain, arguing with a claim already
+committed. None of it is automatable and none of it is judgment in the sense §9.5 means. It is
+closer to review — and crux already knows the shape, since **the gate is applied by somebody who
+did not build**. What this session suggests is that the principle extends past the code to the
+framework itself, and that the review has to be a separate act, because the writer of an artifact
+cannot see what the reader of it will.
 
 ### Not yet observed
 
