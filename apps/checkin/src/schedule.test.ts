@@ -7,9 +7,11 @@
 import { assert, it } from "@effect/vitest";
 import { withTestCapabilities } from "@feelsie/core/test-support";
 import type { TestDatabase } from "@feelsie/core/test-support";
-import { Effect } from "effect";
+import * as Cloudflare from "alchemy/Cloudflare";
+import { Effect, Layer } from "effect";
 import { TestClock } from "effect/testing";
 
+import { Mailer, mailerLayer } from "./mailer.ts";
 import { sendDailyPrompt } from "./schedule.ts";
 import { localDay, localHour, testConfig, testMailer } from "./test-support.ts";
 
@@ -24,8 +26,8 @@ const promptRow = (database: TestDatabase): unknown =>
 const failureRows = (database: TestDatabase): ReadonlyArray<unknown> =>
   database.raw.prepare("SELECT date, reason FROM send_failures ORDER BY seq").all();
 
-// @attests root/checkin/prompt/is-sent-once-per-local-date
-it.effect("creates one prompt and sends once however many times it runs at the send hour", () =>
+// @attests root/checkin/prompt/reuses-one-prompt-until-success
+it.effect("creates one prompt and stops after a returned send is recorded", () =>
   withTestCapabilities((database) => {
     const mailer = testMailer();
     return Effect.gen(function* () {
@@ -43,8 +45,8 @@ it.effect("creates one prompt and sends once however many times it runs at the s
   }),
 );
 
-// @attests root/checkin/prompt/is-sent-once-per-local-date
-// @attests root/checkin/prompt/is-sent-at-the-send-hour
+// @attests root/checkin/prompt/reuses-one-prompt-until-success
+// @attests root/checkin/prompt/attempts-start-at-the-send-hour
 it.effect("sends once across a whole simulated local day, at the configured hour", () =>
   withTestCapabilities((database) => {
     const mailer = testMailer();
@@ -67,7 +69,7 @@ it.effect("sends once across a whole simulated local day, at the configured hour
   }),
 );
 
-// @attests root/checkin/prompt/is-sent-at-the-send-hour
+// @attests root/checkin/prompt/attempts-start-at-the-send-hour
 it.effect("follows the configured send hour rather than a fixed one", () =>
   withTestCapabilities(() => {
     const mailer = testMailer();
@@ -88,24 +90,41 @@ it.effect("follows the configured send hour rather than a fixed one", () =>
   }),
 );
 
-// @attests root/checkin/prompt/is-sent-at-the-send-hour
-// @attests root/checkin/prompt/records-a-failed-send
+// @attests root/checkin/prompt/attempts-start-at-the-send-hour
 it.effect("never attempts a send before the send hour, and keeps trying after it", () =>
   withTestCapabilities(() => {
     // Refuses everything, so nothing is ever marked sent and every hour of the day is free to
     // try. What it attempts is then exactly the set of hours the gate admits.
     const mailer = testMailer(() => "the binding refused");
+    const attemptedAt: number[] = [];
     return Effect.gen(function* () {
       for (const hour of hoursOfTheDay) {
+        const attemptsBefore = mailer.attempts.length;
         yield* TestClock.setTime(localHour(hour));
         yield* sendDailyPrompt;
+        if (mailer.attempts.length > attemptsBefore) {
+          attemptedAt.push(hour);
+        }
       }
 
       assert.strictEqual(mailer.sent.length, 0);
       // 21, 22, 23 — never earlier, and the retry runs out with the local date rather than
       // going quiet after one attempt. An email at 3am is the failure this half prevents; a
       // transient blip costing the whole day is the failure the other half prevents.
-      assert.strictEqual(mailer.attempts.length, 3);
+      assert.deepEqual(attemptedAt, [21, 22, 23]);
+    }).pipe(Effect.provide(mailer.layer), Effect.provide(testConfig()));
+  }),
+);
+
+// @attests root/checkin/prompt/attempts-start-at-the-send-hour
+it.effect("attempts on the first fire after the send hour when the exact-hour fire was missed", () =>
+  withTestCapabilities(() => {
+    const mailer = testMailer();
+    return Effect.gen(function* () {
+      yield* TestClock.setTime(localHour(22));
+      yield* sendDailyPrompt;
+      assert.strictEqual(mailer.attempts.length, 1);
+      assert.strictEqual(mailer.sent.length, 1);
     }).pipe(Effect.provide(mailer.layer), Effect.provide(testConfig()));
   }),
 );
@@ -113,7 +132,6 @@ it.effect("never attempts a send before the send hour, and keeps trying after it
 // @attests root/checkin/prompt/records-a-failed-send
 it.effect("records a refused send with its reason", () =>
   withTestCapabilities((database) => {
-    const mailer = testMailer(() => "email from prompt@mail.example.com not allowed");
     return Effect.gen(function* () {
       yield* TestClock.setTime(localHour(21));
       yield* sendDailyPrompt;
@@ -124,11 +142,23 @@ it.effect("records a refused send with its reason", () =>
       assert.deepEqual(failureRows(database), [
         { date: localDay, reason: "email from prompt@mail.example.com not allowed" },
       ]);
-    }).pipe(Effect.provide(mailer.layer), Effect.provide(testConfig()));
+    }).pipe(
+      Effect.provide(
+        mailerLayer({
+          send: () =>
+            Effect.fail(
+              new Cloudflare.Email.SendEmailError({ message: "email from prompt@mail.example.com not allowed" }),
+            ),
+        }),
+      ),
+      Effect.provide(testConfig()),
+    );
   }),
 );
 
 // @attests root/checkin/prompt/records-a-failed-send
+// @attests root/checkin/prompt/reuses-one-prompt-until-success
+// @attests root/checkin/prompt/attempts-start-at-the-send-hour
 it.effect("leaves a refused prompt unsent, and the next fire sends the same token", () =>
   withTestCapabilities((database) => {
     const mailer = testMailer((attempt) => (attempt === 1 ? "transient" : undefined));
@@ -140,8 +170,8 @@ it.effect("leaves a refused prompt unsent, and the next fire sends the same toke
       yield* TestClock.setTime(localHour(22));
       yield* sendDailyPrompt;
 
-      // A prompt wrongly marked sent here would interact with is-sent-once-per-local-date to
-      // suppress every retry for the date, and one transient failure would cost the whole day.
+      // A prompt wrongly marked sent here would suppress every retry for the date, and one
+      // transient failure would cost the whole day.
       assert.deepEqual(afterFailure, { date: localDay, sent_at: null });
       assert.deepEqual(promptRow(database), { date: localDay, sent_at: localHour(22) });
       assert.strictEqual(mailer.sent.length, 1);
@@ -166,6 +196,24 @@ it.effect("records no failure when the send returns, and marks the prompt sent",
       assert.deepEqual(promptRow(database), { date: localDay, sent_at: localHour(21) });
     }).pipe(Effect.provide(mailer.layer), Effect.provide(testConfig()));
   }),
+);
+
+// @attests root/prompt/expires-after-seven-days
+it.effect("records the send time after the send returns", () =>
+  withTestCapabilities((database) =>
+    Effect.gen(function* () {
+      yield* TestClock.setTime(localHour(21));
+      yield* sendDailyPrompt;
+      assert.deepEqual(promptRow(database), { date: localDay, sent_at: localHour(21) + 10 * 60 * 1_000 });
+    }).pipe(
+      Effect.provide(
+        Layer.succeed(Mailer, {
+          send: () => TestClock.adjust("10 minutes"),
+        }),
+      ),
+      Effect.provide(testConfig()),
+    ),
+  ),
 );
 
 // @attests root/checkin/email/sender-follows-the-configured-domain

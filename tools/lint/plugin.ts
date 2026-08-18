@@ -19,6 +19,11 @@ interface Literal {
   readonly value: unknown;
 }
 
+interface Identifier {
+  readonly type: "Identifier";
+  readonly name: string;
+}
+
 interface TemplateElement {
   readonly type: "TemplateElement";
   readonly value: { readonly cooked?: string | null; readonly raw: string };
@@ -67,7 +72,39 @@ const rule = {
   },
 };
 
+const noD1QueryRule = {
+  meta: {
+    type: "problem",
+    docs: {
+      description: "Deny direct database bindings in the public check-in Worker.",
+      recommended: false,
+    },
+    messages: {
+      directD1Query:
+        "Use the token-authorized capabilities from @feelsie/core/d1. The public Worker must not receive arbitrary SQL.",
+    },
+  },
+  createOnce(context: RuleContext) {
+    return {
+      Identifier(node: Identifier) {
+        if (node.name === "QueryDatabase" || node.name === "QueryDatabaseLocal" || node.name === "WorkerEnvironment") {
+          context.report({ node, messageId: "directD1Query" });
+        }
+      },
+      Literal(node: Literal) {
+        if (
+          node.value === "QueryDatabase" ||
+          node.value === "QueryDatabaseLocal" ||
+          node.value === "WorkerEnvironment"
+        ) {
+          context.report({ node, messageId: "directD1Query" });
+        }
+      },
+    };
+  },
+};
+
 export default {
   meta: { name: "feelsie" },
-  rules: { "no-email-literals": rule },
+  rules: { "no-d1-query": noD1QueryRule, "no-email-literals": rule },
 };

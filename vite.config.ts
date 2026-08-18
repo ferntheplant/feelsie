@@ -106,6 +106,7 @@ export default defineConfig({
           "feelsie/no-email-literals": "error",
           // @attests:end
           // @attests root/checkin/routes/expose-no-history
+          "feelsie/no-d1-query": "error",
           "no-restricted-imports": [
             "error",
             {
@@ -120,7 +121,7 @@ export default defineConfig({
                   // The names A003 will add. Denying them before they exist is the point: this
                   // rule is what holds the type witness in place across that addition, and a
                   // rule written afterwards is a rule written after the regression.
-                  importNames: ["EntryHistory", "listEntries"],
+                  importNames: ["EntryHistory", "EntryRead", "listEntries"],
                   message:
                     "A list operation belongs to the dashboard. This Worker serves no route returning anything but the entry a presented token authorises.",
                 },

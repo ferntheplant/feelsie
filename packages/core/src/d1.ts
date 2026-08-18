@@ -21,13 +21,24 @@
 //      idiom for exactly this — see `Cloudflare/StateStore/Api.ts` in the package.
 import { RuntimeContext } from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
-import { Cause, Effect, Layer, Option } from "effect";
+import { Cause, Effect, Layer, Option, Schedule } from "effect";
 
-import { capabilitiesLayer } from "./capabilities.ts";
-import type { CheckIn, EntryRead, PromptRead, PromptWrite } from "./capabilities.ts";
+import { checkInCapabilitiesLayer } from "./capabilities.ts";
+import type { CheckIn, CheckInFormRead, PromptWrite } from "./capabilities.ts";
 import { Database } from "./database.ts";
 import type { DatabaseShape, SqlRow, SqlStatement } from "./database.ts";
 import { DatabaseError } from "./errors.ts";
+
+const transientD1Messages = [
+  "Network connection lost",
+  "storage caused object to be reset",
+  "reset because its code was updated",
+];
+
+const isTransientD1Failure = (cause: Cause.Cause<never>): boolean => {
+  const rendered = Cause.pretty(cause);
+  return transientD1Messages.some((message) => rendered.includes(message));
+};
 
 /**
  * Run a D1 effect, discharging `RuntimeContext` and turning any defect into the
@@ -42,8 +53,17 @@ const attempt = <A>(
   effect.pipe(
     Effect.provide(RuntimeContext.phantom),
     Effect.catchCause((cause) =>
-      Cause.hasInterrupts(cause) ? Effect.failCause(cause) : Effect.fail(new DatabaseError({ cause, operation })),
+      Cause.hasInterrupts(cause)
+        ? Effect.failCause(cause)
+        : Effect.fail(new DatabaseError({ cause, operation, retryable: isTransientD1Failure(cause) })),
     ),
+    // D1 documents transient failures for reads and writes. Every statement behind this adapter
+    // is idempotent, so retrying here preserves one domain decision in the caller.
+    Effect.retry({
+      while: (error) => error.retryable === true,
+      times: 2,
+      schedule: Schedule.exponential("50 millis"),
+    }),
   );
 
 const prepare = (
@@ -84,9 +104,9 @@ const shapeOf = (client: Cloudflare.D1.QueryDatabaseClient): DatabaseShape => ({
  * Worker at plan time, so a client built lazily on the first request would deploy a Worker with
  * no D1 binding at all.
  */
-export const capabilities = (
+export const checkInCapabilities = (
   database: Cloudflare.D1.Database,
-): Effect.Effect<Layer.Layer<CheckIn | EntryRead | PromptRead | PromptWrite>, never, Cloudflare.D1.QueryDatabase> =>
+): Effect.Effect<Layer.Layer<CheckIn | CheckInFormRead | PromptWrite>, never, Cloudflare.D1.QueryDatabase> =>
   Effect.map(Cloudflare.D1.QueryDatabase(database), (client) =>
-    Layer.provide(capabilitiesLayer, Layer.succeed(Database, shapeOf(client))),
+    Layer.provide(checkInCapabilitiesLayer, Layer.succeed(Database, shapeOf(client))),
   );

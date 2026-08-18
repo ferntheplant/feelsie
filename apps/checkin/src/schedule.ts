@@ -7,14 +7,12 @@
 // **Three claims live in the twenty lines below, and the order of the steps is what carries
 // them.**
 //
-// - `root/checkin/prompt/is-sent-once-per-local-date` — the prompt is opened before the send
-//   and marked sent after it. Opening is idempotent on the local date's primary key, so however
-//   many times this runs there is one prompt; the `sentAt` check is what makes the send happen
-//   once for it.
-// - `root/checkin/prompt/is-sent-at-the-send-hour` — nothing happens before the send hour. It
-//   can happen later on the same local date, and only after an earlier send failed: the mail
-//   arriving an hour late beats a transient blip costing the whole day, and it cannot arrive
-//   early, which is the failure a reader would actually see.
+// - `root/checkin/prompt/reuses-one-prompt-until-success` — opening is idempotent on the local
+//   date's primary key, so every retry carries the same token. Once a returned send is recorded,
+//   the `sentAt` check stops later fires.
+// - `root/checkin/prompt/attempts-start-at-the-send-hour` — nothing happens before the send
+//   hour. The first fire at or after it attempts the prompt, and later fires retry until one
+//   returns or the local date ends.
 // - `root/checkin/prompt/records-a-failed-send` — the send's failure is recorded here or it is
 //   observed nowhere. `CronEventSourceLive` wraps every handler in
 //   `Effect.catchCause(() => Effect.void)`, so Cloudflare never sees a failed invocation, its
@@ -59,14 +57,16 @@ export const sendDailyPrompt: Effect.Effect<
   }
 
   const message = yield* promptMessage(prompt.token);
+  const attemptId = yield* Effect.sync(() => crypto.randomUUID());
 
   yield* mailer.send(message).pipe(
     Effect.matchEffect({
       // Not marked sent, so the next fire of this local date opens the same prompt and tries the
       // same token again. A prompt wrongly marked here would suppress every retry for the date
       // and cost the whole day, silently.
-      onFailure: (error) => prompts.recordFailure(localTime.date, now, error.reason),
-      onSuccess: () => prompts.markSent(localTime.date, now),
+      onFailure: (error) => prompts.recordFailure(localTime.date, now, attemptId, error.reason),
+      onSuccess: () =>
+        Effect.flatMap(Clock.currentTimeMillis, (sentAt) => prompts.markSent(localTime.date, Timestamp(sentAt))),
     }),
   );
 });

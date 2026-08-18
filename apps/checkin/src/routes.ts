@@ -3,26 +3,25 @@
 // Two claims are about this table rather than about any handler in it.
 //
 // **`root/checkin/form/get-does-not-write`.** The GET handler is annotated
-// `Effect<…, …, EntryRead | HttpServerRequest | PromptRead>` and the POST handler is the only
+// `Effect<…, …, CheckInFormRead | HttpServerRequest>` and the POST handler is the only
 // one that names `CheckIn`. The annotations are the witness: reaching a write from the GET path
 // would add `CheckIn` to its requirement channel, and the annotation is where that becomes a
 // compile error. `core` had to change for this to be possible at all — narrowing a SQL-taking
 // handle does not make a write unrepresentable, because `first` runs `INSERT … RETURNING` and
 // returns its row. See `packages/core/src/capabilities.ts`.
 //
-// **`root/checkin/routes/expose-no-history`.** The set below is the whole answer to "what can
-// this Worker return", and it is a value a test can read. The other half — that the route
-// returning an entry returns only the one its token authorises — is a property of `getForm`,
-// because the type witness cannot see a handler that calls a single-entry read in a loop.
+// **`root/checkin/routes/expose-no-history`.** The form read accepts a token rather than a date
+// and returns only that prompt's entry. The route table is the other half: it is the complete set
+// of paths a test can read.
 
-import { CheckIn, EntryRead, expiresAt, LocalDate, Measure, PromptRead, Token } from "@feelsie/core";
+import { CheckIn, CheckInFormRead, expiresAt, LocalDate, Measure, Token } from "@feelsie/core";
 import type { EntryInput } from "@feelsie/core";
 import { Clock, Effect, Option, Schema } from "effect";
 import type { HttpMethod } from "effect/unstable/http/HttpMethod";
 import * as HttpServerRequest from "effect/unstable/http/HttpServerRequest";
 import * as HttpServerResponse from "effect/unstable/http/HttpServerResponse";
 
-import { checkInForm, recordedPage, unusableTokenPage } from "./form.ts";
+import { checkInForm, recordedPage, temporarilyUnavailablePage, unusableTokenPage } from "./form.ts";
 import { checkInPath } from "./paths.ts";
 
 /**
@@ -33,7 +32,7 @@ import { checkInPath } from "./paths.ts";
 export type RouteHandler = Effect.Effect<
   HttpServerResponse.HttpServerResponse,
   never,
-  CheckIn | EntryRead | HttpServerRequest.HttpServerRequest | PromptRead
+  CheckIn | CheckInFormRead | HttpServerRequest.HttpServerRequest
 >;
 
 export interface Route {
@@ -77,22 +76,21 @@ const tokenFromQuery: Effect.Effect<Option.Option<Token>, never, HttpServerReque
 export const getForm: Effect.Effect<
   HttpServerResponse.HttpServerResponse,
   never,
-  EntryRead | HttpServerRequest.HttpServerRequest | PromptRead
+  CheckInFormRead | HttpServerRequest.HttpServerRequest
 > = Effect.gen(function* () {
-  const prompts = yield* PromptRead;
-  const entries = yield* EntryRead;
+  const formRead = yield* CheckInFormRead;
   const presented = yield* tokenFromQuery;
 
   if (Option.isNone(presented)) {
     return HttpServerResponse.html(unusableTokenPage()).pipe(HttpServerResponse.setStatus(400));
   }
 
-  const found = yield* prompts.forToken(presented.value);
+  const found = yield* formRead.forToken(presented.value);
   if (Option.isNone(found)) {
     return HttpServerResponse.html(unusableTokenPage()).pipe(HttpServerResponse.setStatus(404));
   }
 
-  const prompt = found.value;
+  const { entry, prompt } = found.value;
   const expiry = expiresAt(prompt);
   const now = yield* Clock.currentTimeMillis;
 
@@ -104,8 +102,7 @@ export const getForm: Effect.Effect<
 
   // The one entry the token authorises, read by the prompt's own date. Nothing here takes a
   // date from the request, so there is no parameter to widen into somebody else's day.
-  const existing = yield* entries.forDate(prompt.date);
-  return HttpServerResponse.html(checkInForm(prompt.token, prompt.date, existing));
+  return HttpServerResponse.html(checkInForm(prompt.token, prompt.date, entry));
 }).pipe(Effect.orDie);
 
 /**
@@ -133,10 +130,15 @@ export const postCheckIn: Effect.Effect<
     ...(note !== undefined && note !== "" ? { note } : {}),
   };
 
-  const recorded = yield* checkIn.answer(Token(token), entry).pipe(Effect.option);
-  return Option.isNone(recorded)
-    ? HttpServerResponse.html(unusableTokenPage()).pipe(HttpServerResponse.setStatus(410))
-    : HttpServerResponse.html(recordedPage(date));
+  return yield* checkIn.answer(Token(token), entry).pipe(
+    Effect.match({
+      onFailure: (error) =>
+        error._tag === "DatabaseError"
+          ? HttpServerResponse.html(temporarilyUnavailablePage()).pipe(HttpServerResponse.setStatus(503))
+          : HttpServerResponse.html(unusableTokenPage()).pipe(HttpServerResponse.setStatus(410)),
+      onSuccess: () => HttpServerResponse.html(recordedPage(date)),
+    }),
+  );
 }).pipe(Effect.orDie);
 
 /**

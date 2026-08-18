@@ -1060,3 +1060,30 @@ The general shape: **a witness can be specified against an artifact a later amen
 create.** Crux has vocabulary for a claim that cannot yet be stated (fog) and for one stated but
 unbuilt (an amendment). It has none for a witness whose subject is in the future, which is a
 thing that will happen in any repository where amendments are sequenced.
+
+---
+
+## C32 — Exactly-once language hid an unobservable commit point · `watch`
+
+A002 claimed that at most one email send returns for a local date. Every witness affirmed: they
+ran scheduled fires sequentially, observed the binding, and stopped after `sent_at` was written.
+The independent audit asked about the line between those observations.
+
+The email binding and D1 have no shared transaction. The binding has no idempotency key. If the
+send returns and the D1 success write fails, repository state is identical to a send that never
+returned. A later fire must either retry and risk a duplicate or stop and risk no email. A D1
+lease removes overlap but not that ambiguity.
+
+The claim was not merely under-covered by a missing concurrency test. Its guarantee was not
+implementable with the declared primitives. The repair lowered it to the observable protocol:
+every attempt reuses one prompt, attempts retry until a returned send is recorded, and later fires
+stop after that record exists.
+
+**What this adds to crux.** Coverage already produces the correct result, so no new rule is
+proposed. The useful audit prompt is narrower: when a claim crosses two stateful systems, identify
+the commit point that its witness observes and force failure on both sides of it. "Prove the
+refusal had no side effect" does not reach an accepted side effect whose acknowledgment cannot be
+recorded.
+
+**Filed `watch`.** One external side effect and one provider. A second occurrence will show
+whether this belongs beside C26's proxy-observation rule or remains an ordinary coverage failure.

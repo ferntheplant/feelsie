@@ -77,9 +77,8 @@ export const withTestDatabase = <A, E, R>(
   );
 
 /**
- * The same handle, exposed as the capability services an app actually holds. A test that
- * exercises a production handler takes this: providing `Database` directly would let the test
- * reach operations the handler cannot, which is the difference the seam exists to make.
+ * The same handle, exposed through every named capability for Core and handler tests. Providing
+ * `Database` directly would let a test bypass the seam that production code uses.
  */
 export const withTestCapabilities = <A, E, R>(use: (database: TestDatabase) => Effect.Effect<A, E, R>) =>
   withTestDatabase((database) => use(database).pipe(Effect.provide(capabilitiesLayer)));

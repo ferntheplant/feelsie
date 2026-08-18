@@ -8,7 +8,7 @@
 // claim about `core` depend on what an app happens to need this week.
 
 import { configEnvironmentVariables } from "@feelsie/core";
-import { Config, Context, Effect } from "effect";
+import { Config, Context, Effect, Schema } from "effect";
 
 import { CheckinConfigError } from "./errors.ts";
 
@@ -28,6 +28,19 @@ export class CheckinConfig extends Context.Service<CheckinConfig, CheckinConfigV
   "@feelsie/checkin/CheckinConfig",
 ) {}
 
+const CheckinOrigin = Schema.URLFromString.pipe(
+  Schema.refine(
+    (url): url is URL =>
+      url.protocol === "https:" &&
+      url.username === "" &&
+      url.password === "" &&
+      url.pathname === "/" &&
+      url.search === "" &&
+      url.hash === "",
+    { expected: "an HTTPS origin without credentials, a path, a query, or a fragment" },
+  ),
+);
+
 const requiredValue = (
   environment: Record<string, string | undefined>,
   field: string,
@@ -43,13 +56,17 @@ export const decodeCheckinConfig = (
 ): Effect.Effect<CheckinConfigValue, CheckinConfigError> =>
   Effect.gen(function* () {
     const inboxAddress = yield* requiredValue(environment, checkinEnvironmentVariables.inboxAddress);
-    const origin = yield* requiredValue(environment, checkinEnvironmentVariables.origin);
+    const originValue = yield* requiredValue(environment, checkinEnvironmentVariables.origin);
 
     if (!inboxAddress.includes("@")) {
       return yield* new CheckinConfigError({ field: checkinEnvironmentVariables.inboxAddress, value: inboxAddress });
     }
 
-    return { inboxAddress, origin: origin.replace(/\/+$/, "") };
+    const origin = yield* Schema.decodeUnknownEffect(CheckinOrigin)(originValue).pipe(
+      Effect.mapError(() => new CheckinConfigError({ field: checkinEnvironmentVariables.origin, value: originValue })),
+    );
+
+    return { inboxAddress, origin: origin.origin };
   });
 
 /**

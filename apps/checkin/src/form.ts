@@ -67,6 +67,9 @@ ${slider("sleep", "Sleep", entry?.sleep ?? 5)}
 export const recordedPage = (date: string): string =>
   page("Feelsie", `<h1>${escape(date)}</h1><p>Recorded. See you tomorrow.</p>`);
 
+export const temporarilyUnavailablePage = (): string =>
+  page("Feelsie", "<h1>Feelsie is temporarily unavailable</h1><p>Your entry was not recorded. Try again.</p>");
+
 /**
  * What an unusable token gets. Deliberately the same page for "never existed", "never sent",
  * and "expired": the check-in hostname carries no Access application

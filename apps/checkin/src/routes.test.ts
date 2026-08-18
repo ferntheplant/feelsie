@@ -4,16 +4,15 @@
 // about what **this Worker** can reach, and a type assertion written next to the service would
 // attest the service.
 import { assert, expectTypeOf, it } from "@effect/vitest";
-import { LocalDate, Measure, PromptWrite, Timestamp } from "@feelsie/core";
+import { CheckIn, DatabaseError, LocalDate, Measure, PromptWrite, Timestamp } from "@feelsie/core";
 import type {
-  CheckIn,
-  DatabaseError,
+  CheckInFormData,
+  CheckInFormRead,
+  CheckInFormReadShape,
   EntryInput,
-  EntryRead,
-  EntryReadShape,
   LocalDate as LocalDateType,
   Prompt,
-  PromptRead,
+  Token as TokenType,
 } from "@feelsie/core";
 import { withTestCapabilities } from "@feelsie/core/test-support";
 import type { TestDatabase } from "@feelsie/core/test-support";
@@ -30,6 +29,14 @@ import { localHour } from "./test-support.ts";
 const origin = "https://checkin.example.com";
 const today = LocalDate("2024-06-11");
 const yesterday = LocalDate("2024-06-10");
+const validSubmission = {
+  token: "test-token",
+  date: today,
+  mood: "8",
+  energy: "3",
+  sleep: "6",
+  note: "long day",
+};
 
 const request = (method: string, url: string, body?: Record<string, string>) =>
   Effect.provideService(
@@ -70,7 +77,7 @@ it("admits no write operation in the GET handler's requirement channel", () => {
   // this union, and the annotation on `getForm` is where that becomes a compile error — so a
   // violation is unrepresentable rather than caught. `POST` is the only handler that names it.
   expectTypeOf<Effect.Services<typeof getForm>>().toEqualTypeOf<
-    EntryRead | HttpServerRequest.HttpServerRequest | PromptRead
+    CheckInFormRead | HttpServerRequest.HttpServerRequest
   >();
   expectTypeOf<Effect.Services<typeof postCheckIn>>().toEqualTypeOf<CheckIn | HttpServerRequest.HttpServerRequest>();
 });
@@ -81,6 +88,7 @@ it.effect("writes nothing when the prompt link is opened, however many times", (
     Effect.gen(function* () {
       yield* TestClock.setTime(localHour(21));
       const prompt = yield* sentPrompt(today, localHour(21));
+      const changesBeforeGet = database.raw.prepare("SELECT total_changes() AS count").get();
 
       for (let visit = 0; visit < 3; visit += 1) {
         const response = yield* getForm.pipe(request("GET", `${origin}${checkInPath}?token=${prompt.token}`));
@@ -94,8 +102,31 @@ it.effect("writes nothing when the prompt link is opened, however many times", (
       assert.deepEqual(database.raw.prepare("SELECT answered_at FROM prompts WHERE date = ?").get(today), {
         answered_at: null,
       });
+      // This reaches every table, including tables that a later migration adds. Named read
+      // capabilities cannot prove that their implementations stay read-only.
+      assert.deepEqual(database.raw.prepare("SELECT total_changes() AS count").get(), changesBeforeGet);
     }),
   ),
+);
+// @attests:end
+
+it.effect("returns unavailable for a database failure", () =>
+  Effect.gen(function* () {
+    let attempts = 0;
+    const response = yield* postCheckIn.pipe(
+      request("POST", `${origin}${checkInPath}`, validSubmission),
+      Effect.provideService(CheckIn, {
+        answer: () =>
+          Effect.suspend(() => {
+            attempts += 1;
+            return Effect.fail(new DatabaseError({ cause: "transient", operation: "test write" }));
+          }),
+      }),
+    );
+
+    assert.strictEqual(response.status, 503);
+    assert.strictEqual(attempts, 1);
+  }),
 );
 
 // @attests root/checkin/form/get-does-not-write
@@ -132,13 +163,32 @@ it.effect("records the measures on the production POST path", () =>
   ),
 );
 
+// @attests root/prompt/expires-after-seven-days
+it.effect("serves the form before expiry and refuses it at the expiry instant", () =>
+  withTestCapabilities(() =>
+    Effect.gen(function* () {
+      const sentAt = localHour(21);
+      const sevenDays = 7 * 24 * 60 * 60 * 1_000;
+      const prompt = yield* sentPrompt(today, sentAt);
+      const link = `${origin}${checkInPath}?token=${prompt.token}`;
+
+      yield* TestClock.setTime(sentAt + sevenDays - 1);
+      const before = yield* getForm.pipe(request("GET", link));
+      yield* TestClock.setTime(sentAt + sevenDays);
+      const atExpiry = yield* getForm.pipe(request("GET", link));
+
+      assert.strictEqual(before.status, 200);
+      assert.strictEqual(atExpiry.status, 410);
+    }),
+  ),
+);
+
 // @attests root/checkin/routes/expose-no-history
 it("exposes no operation returning more than one entry", () => {
-  // The entry-reading capability is one operation taking one local date. This is the direct
-  // path closed: adding `listEntries` to the service `apps/checkin` holds would break this
-  // line, which is what forces A003's list operation onto a service this Worker never receives.
-  expectTypeOf<EntryReadShape>().toEqualTypeOf<{
-    readonly forDate: (date: LocalDateType) => Effect.Effect<Option.Option<EntryInput>, DatabaseError>;
+  // The entry-reading capability takes a token, not a date. Adding a date read or `listEntries`
+  // to the service this Worker holds breaks this line.
+  expectTypeOf<CheckInFormReadShape>().toEqualTypeOf<{
+    readonly forToken: (token: TokenType) => Effect.Effect<Option.Option<CheckInFormData>, DatabaseError>;
   }>();
 });
 

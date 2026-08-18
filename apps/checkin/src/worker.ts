@@ -1,5 +1,5 @@
 import { configLayer } from "@feelsie/core";
-import { capabilities } from "@feelsie/core/d1";
+import { checkInCapabilities } from "@feelsie/core/d1";
 import { coreDatabase } from "@feelsie/core/stack";
 // The check-in Worker: one cron trigger, one send binding, one D1 binding, two routes.
 //
@@ -12,13 +12,11 @@ import { coreDatabase } from "@feelsie/core/stack";
 // `main: import.meta.url` makes this module its own entrypoint, and the bundler reads its
 // DEFAULT export as that entrypoint — a Worker exported by name bundles to
 // `"default" is not exported`, at deploy time rather than at type-check time.
-import { RuntimeContext } from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import { Effect, Layer } from "effect";
 
 import { CheckinConfig, decodeCheckinConfig, readEnvironment } from "./config.ts";
-import { MailSendError } from "./errors.ts";
-import { Mailer } from "./mailer.ts";
+import { mailerLayer } from "./mailer.ts";
 import { promptSenderAddress } from "./message.ts";
 import { router } from "./routes.ts";
 import { sendDailyPrompt } from "./schedule.ts";
@@ -56,26 +54,13 @@ export default Cloudflare.Worker(
       }),
     );
 
-    const mailer = Layer.succeed(Mailer, {
-      send: (message) =>
-        email.send(message).pipe(
-          Effect.asVoid,
-          // The binding's client fails with `SendEmailError`, whose `message` is where the
-          // simulator and the real service put the refusal. It is carried through because
-          // `send_failures.reason` is the only record the failure leaves.
-          Effect.mapError((error) => new MailSendError({ reason: error.message })),
-          // `RuntimeContext` is ambient by the time a handler runs, and this layer is built in
-          // init where there is nothing to provide. `phantom` is Alchemy's own idiom for it, and
-          // `packages/core/src/d1.ts` already uses it for the same reason.
-          Effect.provide(RuntimeContext.phantom),
-        ),
-    });
+    const mailer = mailerLayer(email);
 
     const services = Layer.mergeAll(
       coreConfig,
       Layer.succeed(CheckinConfig, checkin),
       mailer,
-      yield* capabilities(yield* coreDatabase),
+      yield* checkInCapabilities(yield* coreDatabase),
     );
 
     yield* Cloudflare.Workers.cron(cronExpression, () => sendDailyPrompt.pipe(Effect.provide(services)));

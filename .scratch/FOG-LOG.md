@@ -683,3 +683,31 @@ That `apps/checkin` did not exist. Every cross-reference to it in A002, A003, A0
 `ALCHEMY-MIGRATION.md`, and `fallow.toml` was written against a package that had never been
 created, and working out which of those references were decisions and which were assumptions took
 longer than writing the package.
+
+## Independent audit of A002
+
+### Thinking — never automate
+
+**Finding the unobservable commit point in send-then-record.** The email binding can accept a
+message before D1 records success. No test ordering fixes that ambiguity, and a lease only removes
+overlap. The operator chose an at-least-once protocol and lowered both send claims. **C32.**
+
+**Deepening the public read around authorization rather than tables.** A date-based `EntryRead`
+was narrow enough to prevent a list call and broad enough to read history in a loop. The useful
+interface is token in, authorized prompt-and-entry view out. This changed the seam rather than
+adding another witness around the shallow one.
+
+**Putting D1 retries below the domain decision.** Retrying `answerPrompt` repeats its clock and
+expiry checks, so an unknown committed write can become a later domain refusal. Retrying the
+idempotent D1 operation inside the adapter preserves one authorization decision and protects the
+scheduled writes through the same mechanism.
+
+### Clerical — candidates for cairn
+
+**Moving two live slugs after an audit.** The catalog, markers, rationale groundings, amendment,
+and agent instructions all carried the old promises. Historical records kept the old names while
+live citations moved, which repeated C24's citation-versus-record judgment by hand.
+
+**Recounting witnesses after one marker gained two claims.** The amendment's witness tables and
+coverage prose had to be reread after the code markers changed. The marker graph can supply the
+count; the coverage explanation still requires judgment.

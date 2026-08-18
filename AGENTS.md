@@ -171,10 +171,10 @@ Two mechanical traps, both found the expensive way:
 ## `core` hands out capabilities, never `Database`
 
 **No app receives the `Database` service, and none can reach arbitrary SQL.** `packages/core`
-exposes four narrow capability services — `PromptRead`, `PromptWrite`, `EntryRead`, `CheckIn` —
-whose SQL is closed inside `core.ts`, and the Effect requirement channel is what enforces the
-narrowing: a handler annotated `Effect<Response, E, EntryRead | PromptRead>` cannot call a write
-without changing its own declared type.
+exposes narrow capability services whose SQL is closed inside `core.ts`. The public form receives
+`CheckInFormRead`, which accepts a token and returns only its prompt and entry. The Effect
+requirement channel enforces the narrowing: a handler annotated with `CheckInFormRead` cannot call
+a write without changing its declared type.
 
 **Narrowing `DatabaseShape` instead would not have worked, and it is worth knowing why.** `first`
 takes arbitrary statement text and runs it, so `INSERT … RETURNING` writes and returns its row
@@ -186,8 +186,9 @@ Three consequences:
 - **`Database` and the SQL types are `@feelsie/core/database`, not the package index.** Reaching
   them is an import an app has to write, which is what gives `no-restricted-imports` an
   identifier to deny under `apps/**`.
-- **`@feelsie/core/d1` hands back a `Layer` of capabilities**, not of `Database`, so a Worker
-  never names the raw service even to build one. It must be yielded in **init**:
+- **`@feelsie/core/d1` hands back a check-in-specific `Layer` of capabilities**, not of
+  `Database`, so the Worker receives no date-based entry reader and never names the raw service.
+  It must be yielded in **init**:
   `QueryDatabaseBinding` registers the binding at plan time, so a client built lazily on the
   first request deploys a Worker with no D1 binding at all.
 - **A list operation belongs on a service the check-in Worker never receives.** A lint rule under

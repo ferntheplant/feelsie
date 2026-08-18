@@ -7,10 +7,12 @@
 // means a witness must observe **the send**, and observing the send means the send has a seam a
 // witness can stand at. `Mailer` is that seam. Its production layer is built in `worker.ts`
 // over `Cloudflare.Email.Send`; the binding is what actually validates and delivers.
+import { RuntimeContext } from "alchemy";
+import type * as Cloudflare from "alchemy/Cloudflare";
 import type { Effect } from "effect";
-import { Context } from "effect";
+import { Context, Effect as EffectApi, Layer } from "effect";
 
-import type { MailSendError } from "./errors.ts";
+import { MailSendError } from "./errors.ts";
 
 export interface MailMessage {
   readonly from: string;
@@ -29,3 +31,14 @@ interface MailerShape {
 }
 
 export class Mailer extends Context.Service<Mailer, MailerShape>()("@feelsie/checkin/Mailer") {}
+
+/** The production adapter from Alchemy's send client to the handler's narrow mail seam. */
+export const mailerLayer = (email: Pick<Cloudflare.Email.SendClient, "send">): Layer.Layer<Mailer> =>
+  Layer.succeed(Mailer, {
+    send: (message) =>
+      email.send(message).pipe(
+        EffectApi.asVoid,
+        EffectApi.mapError((error) => new MailSendError({ reason: error.message })),
+        EffectApi.provide(RuntimeContext.phantom),
+      ),
+  });

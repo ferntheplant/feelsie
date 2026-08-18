@@ -8,6 +8,7 @@ export class ConfigValidationError extends Data.TaggedError("ConfigValidationErr
 export class DatabaseError extends Data.TaggedError("DatabaseError")<{
   readonly cause: unknown;
   readonly operation: string;
+  readonly retryable?: boolean;
 }> {}
 
 export class PromptNotFoundError extends Data.TaggedError("PromptNotFoundError") {}

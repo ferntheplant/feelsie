@@ -41,11 +41,10 @@ below. One of its claims was reworded at the merge on an operator's ruling — t
 and the amendment records what moved.
 
 **003 inherits the seam, and inherits two things nobody predicted.** `packages/core` now exposes
-`PromptRead`, `PromptWrite`, `EntryRead`, and `CheckIn` instead of `Database`; the SQL interface
-moved to `@feelsie/core/database` so a lint rule has an entrypoint to deny; and the package's
-`exports` point at source rather than `dist`, because `vp run ready` tests before it builds. The
-dashboard's `listEntries` must land on a service the check-in Worker never receives — a lint rule
-under `apps/checkin/**` already denies the name.
+named capabilities instead of `Database`; the public form receives one token-authorized read.
+The SQL interface moved to `@feelsie/core/database` so a lint rule has an entrypoint to deny, and
+the package's exports point at source because `vp run ready` tests before it builds. The
+dashboard's history operations must land on a service the check-in Worker never receives.
 
 ## 002 and 003 were revised after 005
 
@@ -94,9 +93,8 @@ so what it recorded as a principle was a property of the tooling.
 The runbook keeps every step. What 006 adds is a claim beside each one, and drift between the two
 remains monitoring that nothing here detects.
 
-A `wrangler` command is still a legitimate witness when it runs **fully locally** — `wrangler
-dev`, `--local`, `deploy --dry-run`. Those read repository configuration and ask Cloudflare
-nothing, so their answer is rederivable from a checkout. Every test in 002 and 004 runs that way.
+A fully local infrastructure command is still a legitimate witness because its answer is
+rederivable from a checkout. A002 uses direct handler tests plus Alchemy's local workerd harness.
 
 ## 006 holds the first claim about the repository itself
 

@@ -72,6 +72,7 @@ it.effect("uses one token to replace an answer before expiry", () =>
       const entries = yield* EntryRead;
       const prompt = yield* sentPrompt(today, sentAt);
       yield* checkIn.answer(prompt.token, entryForDate(prompt.date, { mood: Measure(2) }));
+      yield* TestClock.setTime(sentAt + sevenDays - 1);
       yield* checkIn.answer(prompt.token, entryForDate(prompt.date, { mood: Measure(9) }));
       const entry = Option.getOrThrow(yield* entries.forDate(prompt.date));
       assert.strictEqual(entry.mood, 9);
@@ -185,6 +186,11 @@ it.effect("returns the measures from the last write", () =>
           sleep: Measure(3),
         }),
       );
+      const firstEntry = Option.getOrThrow(yield* entries.forDate(prompt.date));
+      assert.strictEqual(firstEntry.energy, 2);
+      assert.strictEqual(firstEntry.mood, 1);
+      assert.strictEqual(firstEntry.sleep, 3);
+
       yield* checkIn.answer(
         prompt.token,
         entryForDate(prompt.date, {

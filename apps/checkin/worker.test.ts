@@ -106,7 +106,8 @@ describe("the deployed check-in Worker", () => {
     }),
   );
 
-  // @attests root/checkin/prompt/is-sent-once-per-local-date
+  // @attests root/checkin/prompt/reuses-one-prompt-until-success
+  // @attests root/checkin/prompt/attempts-start-at-the-send-hour
   // @attests root/checkin/email/sender-follows-the-configured-domain
   test(
     "sends one real message through the send binding, from the configured domain",
@@ -149,7 +150,7 @@ describe("the deployed check-in Worker", () => {
       const url = worker.url ?? "";
 
       // The prompt for this local date has already been sent by the test above — that is what
-      // `is-sent-once-per-local-date` means — so the link comes out of the message it produced
+      // `reuses-one-prompt-until-success` means — so the link comes out of the message it produced
       // rather than out of a second one.
       yield* fireSchedule(url);
       const token = /token=([A-Za-z0-9_%-]+)/.exec(latestMailBody())?.[1] ?? "";

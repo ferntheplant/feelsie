@@ -5,17 +5,17 @@
 
 A GET to a prompt link never writes. Only POST records measures.
 
-> @claim root/checkin/prompt/is-sent-once-per-local-date
+> @claim root/checkin/prompt/reuses-one-prompt-until-success
 > @kind capability
 
-However many times the scheduled handler runs, at most one prompt is created for a local date,
-and at most one send returns for it.
+Every send attempt for a local date uses one prompt. Once a returned send is recorded, later
+scheduled fires make no further attempts.
 
-> @claim root/checkin/prompt/is-sent-at-the-send-hour
+> @claim root/checkin/prompt/attempts-start-at-the-send-hour
 > @kind capability
 
-A prompt is sent at the configured send hour, and never before it. It is sent at a later hour of
-the same local date only when an earlier send failed.
+The first scheduled fire at or after the configured send hour attempts the prompt, and no earlier
+fire does. Failed attempts retry on later fires until one returns or the local date ends.
 
 > @claim root/checkin/prompt/records-a-failed-send
 > @kind capability

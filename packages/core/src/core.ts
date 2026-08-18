@@ -2,12 +2,13 @@
 //
 // **Nothing here is exported from the package.** `capabilities.ts` wraps these into narrow
 // capability services and that is the only way in. The reason is a type witness two apps
-// need: a handler typed `Effect<Response, E, PromptRead>` must be unable to write, and
+// need: a handler typed `Effect<Response, E, CheckInFormRead>` must be unable to write, and
 // narrowing `DatabaseShape` does not achieve that — `first` takes arbitrary statement text
 // and runs it, so `INSERT … RETURNING` writes through a "read-only" handle. The narrowing has
 // to happen above the SQL, which means the SQL never leaves this file.
 import { Clock, DateTime, Effect, Option } from "effect";
 
+import type { CheckInFormData } from "./capabilities.ts";
 import { CoreConfig } from "./config.ts";
 import { Database, type SqlRow } from "./database.ts";
 import { DatabaseError, PromptExpiredError, PromptNotFoundError, TokenDateMismatchError } from "./errors.ts";
@@ -127,7 +128,7 @@ const decodeEntry = (row: SqlRow): Effect.Effect<EntryInput, DatabaseError> =>
 
 const selectPrompt = "SELECT date, token, created_at, sent_at, answered_at FROM prompts";
 
-export const promptForDate = (date: LocalDate): Effect.Effect<Option.Option<Prompt>, DatabaseError, Database> =>
+const promptForDate = (date: LocalDate): Effect.Effect<Option.Option<Prompt>, DatabaseError, Database> =>
   Effect.gen(function* () {
     const database = yield* Database;
     const row = yield* database.first({ text: `${selectPrompt} WHERE date = ?`, parameters: [date] });
@@ -137,7 +138,7 @@ export const promptForDate = (date: LocalDate): Effect.Effect<Option.Option<Prom
     });
   });
 
-export const promptForToken = (token: Token): Effect.Effect<Option.Option<Prompt>, DatabaseError, Database> =>
+const promptForToken = (token: Token): Effect.Effect<Option.Option<Prompt>, DatabaseError, Database> =>
   Effect.gen(function* () {
     const database = yield* Database;
     const row = yield* database.first({ text: `${selectPrompt} WHERE token = ?`, parameters: [token] });
@@ -202,14 +203,16 @@ export const markPromptSent = (date: LocalDate, at: Timestamp): Effect.Effect<vo
 export const recordSendFailure = (
   date: LocalDate,
   at: Timestamp,
+  attemptId: string,
   reason: string,
 ): Effect.Effect<void, DatabaseError, Database> =>
   Effect.gen(function* () {
     const database = yield* Database;
     yield* database.batch([
       {
-        text: "INSERT INTO send_failures (date, failed_at, reason) VALUES (?, ?, ?)",
-        parameters: [date, at, reason],
+        text: `INSERT INTO send_failures (date, failed_at, attempt_id, reason) VALUES (?, ?, ?, ?)
+          ON CONFLICT(attempt_id) DO UPDATE SET reason = excluded.reason`,
+        parameters: [date, at, attemptId, reason],
       },
     ]);
   });
@@ -283,4 +286,16 @@ export const readEntry = (date: LocalDate): Effect.Effect<Option.Option<EntryInp
       onNone: () => Effect.succeed(Option.none<EntryInput>()),
       onSome: (value) => decodeEntry(value).pipe(Effect.map(Option.some)),
     });
+  });
+
+/** The whole read interface for the public form: a token chooses the only entry it can return. */
+export const readCheckInForm = (token: Token): Effect.Effect<Option.Option<CheckInFormData>, DatabaseError, Database> =>
+  Effect.gen(function* () {
+    const prompt = yield* promptForToken(token);
+    if (Option.isNone(prompt)) {
+      return Option.none();
+    }
+
+    const entry = yield* readEntry(prompt.value.date);
+    return Option.some({ prompt: prompt.value, entry });
   });

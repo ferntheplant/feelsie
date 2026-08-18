@@ -11,32 +11,28 @@
 //
 // So the narrowing happens above the SQL. Each service names operations, the SQL is closed
 // inside `core.ts`, and the Effect requirement channel does the rest: a handler annotated
-// `Effect<Response, E, EntryRead | PromptRead>` cannot reach an operation requiring `CheckIn`
+// `Effect<Response, E, CheckInFormRead>` cannot reach an operation requiring `CheckIn`
 // without changing its own declared type, which is a compile error at the annotation.
 //
-// **The split is by caller, not by table.** `PromptRead` and `PromptWrite` are separate
-// because the check-in form reads prompts and never writes them, while the scheduled handler
-// does both; `EntryRead` and `CheckIn` are separate for the same reason across the GET/POST
-// boundary. A service nobody would ever hold alone is a service that buys no witness.
+// **The split is by caller, not by table.** `CheckInFormRead` accepts a token and returns only
+// the prompt and entry that token authorises. The check-in Worker receives no date-based entry
+// reader, while `CheckIn` and `PromptWrite` carry its two write paths. A service nobody would
+// hold alone buys no witness.
 import type { Option } from "effect";
 import { Context, Effect, Layer } from "effect";
 
-import {
-  answerPrompt,
-  markPromptSent,
-  openPrompt,
-  promptForDate,
-  promptForToken,
-  readEntry,
-  recordSendFailure,
-} from "./core.ts";
+import { answerPrompt, markPromptSent, openPrompt, readCheckInForm, readEntry, recordSendFailure } from "./core.ts";
 import { Database } from "./database.ts";
 import type { DatabaseError, PromptExpiredError, PromptNotFoundError, TokenDateMismatchError } from "./errors.ts";
 import type { EntryInput, LocalDate, Prompt, Timestamp, Token } from "./model.ts";
 
-export interface PromptReadShape {
-  readonly forDate: (date: LocalDate) => Effect.Effect<Option.Option<Prompt>, DatabaseError>;
-  readonly forToken: (token: Token) => Effect.Effect<Option.Option<Prompt>, DatabaseError>;
+export interface CheckInFormData {
+  readonly prompt: Prompt;
+  readonly entry: Option.Option<EntryInput>;
+}
+
+export interface CheckInFormReadShape {
+  readonly forToken: (token: Token) => Effect.Effect<Option.Option<CheckInFormData>, DatabaseError>;
 }
 
 export interface PromptWriteShape {
@@ -45,7 +41,12 @@ export interface PromptWriteShape {
   /** Marks the prompt sent. Called only after a send has returned. */
   readonly markSent: (date: LocalDate, at: Timestamp) => Effect.Effect<void, DatabaseError>;
   /** Records a send that did not return, with its reason. */
-  readonly recordFailure: (date: LocalDate, at: Timestamp, reason: string) => Effect.Effect<void, DatabaseError>;
+  readonly recordFailure: (
+    date: LocalDate,
+    at: Timestamp,
+    attemptId: string,
+    reason: string,
+  ) => Effect.Effect<void, DatabaseError>;
 }
 
 export interface EntryReadShape {
@@ -59,12 +60,13 @@ export interface CheckInShape {
   ) => Effect.Effect<EntryInput, DatabaseError | PromptExpiredError | PromptNotFoundError | TokenDateMismatchError>;
 }
 
-export class PromptRead extends Context.Service<PromptRead, PromptReadShape>()("@feelsie/core/PromptRead") {
-  static readonly layer: Layer.Layer<PromptRead, never, Database> = Layer.effect(
-    PromptRead,
+export class CheckInFormRead extends Context.Service<CheckInFormRead, CheckInFormReadShape>()(
+  "@feelsie/core/CheckInFormRead",
+) {
+  static readonly layer: Layer.Layer<CheckInFormRead, never, Database> = Layer.effect(
+    CheckInFormRead,
     Effect.map(Database, (database) => ({
-      forDate: (date: LocalDate) => Effect.provideService(promptForDate(date), Database, database),
-      forToken: (token: Token) => Effect.provideService(promptForToken(token), Database, database),
+      forToken: (token: Token) => Effect.provideService(readCheckInForm(token), Database, database),
     })),
   );
 }
@@ -75,8 +77,8 @@ export class PromptWrite extends Context.Service<PromptWrite, PromptWriteShape>(
     Effect.map(Database, (database) => ({
       open: (date: LocalDate, at: Timestamp) => Effect.provideService(openPrompt(date, at), Database, database),
       markSent: (date: LocalDate, at: Timestamp) => Effect.provideService(markPromptSent(date, at), Database, database),
-      recordFailure: (date: LocalDate, at: Timestamp, reason: string) =>
-        Effect.provideService(recordSendFailure(date, at, reason), Database, database),
+      recordFailure: (date: LocalDate, at: Timestamp, attemptId: string, reason: string) =>
+        Effect.provideService(recordSendFailure(date, at, attemptId, reason), Database, database),
     })),
   );
 }
@@ -101,9 +103,12 @@ export class CheckIn extends Context.Service<CheckIn, CheckInShape>()("@feelsie/
 }
 
 /**
- * Every capability, over one `Database`. A Worker builds this once in its init phase and hands
- * each handler only the slice its annotation admits — the layer is where the services meet,
- * and it is deliberately the only place they do.
+ * Every capability, over one `Database`. Core's tests use this full layer. Production adapters
+ * expose caller-specific subsets so an app never receives capabilities it does not need.
  */
-export const capabilitiesLayer: Layer.Layer<CheckIn | EntryRead | PromptRead | PromptWrite, never, Database> =
-  Layer.mergeAll(CheckIn.layer, EntryRead.layer, PromptRead.layer, PromptWrite.layer);
+export const capabilitiesLayer: Layer.Layer<CheckIn | CheckInFormRead | EntryRead | PromptWrite, never, Database> =
+  Layer.mergeAll(CheckIn.layer, CheckInFormRead.layer, EntryRead.layer, PromptWrite.layer);
+
+/** The capabilities that can enter the public check-in Worker. */
+export const checkInCapabilitiesLayer: Layer.Layer<CheckIn | CheckInFormRead | PromptWrite, never, Database> =
+  Layer.mergeAll(CheckIn.layer, CheckInFormRead.layer, PromptWrite.layer);
