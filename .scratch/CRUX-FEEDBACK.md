@@ -34,11 +34,19 @@ Entries are in the order they were found, not in numerical order. The index is t
 | C16 | a fog item must record what would clear it                  | `repeated` | cairn            |
 | C17 | markdown directives are invisible in rendered views         | `settled`  | crux §6.3        |
 | C18 | directive names collide with other ecosystems               | `settled`  | crux §6.1, §6.6  |
-| C19 | audit coverage before an amendment freezes witness work     | `watch`    | crux §7, §9.2    |
+| C19 | audit coverage before an amendment freezes witness work     | `repeated` | crux §7, §9.2    |
+| C20 | §4.1's boundary is set by tooling, not by principle         | `settled`  | crux §4.1, §5.2  |
+| C21 | no artifact exists for work that changes the witness supply | `repeated` | crux §7, §13     |
+| C22 | an amendment has no vintage                                 | `watch`    | —                |
 
 ---
 
 ## C1 — A claim's subject must be rederivable from the repository · `settled`
+
+> **Refined by [C20](#c20--41s-boundary-is-set-by-tooling-not-by-principle--settled), not
+> retracted.** The rule holds. What C20 adds is that the boundary it draws moves with your tooling:
+> a claim about _live_ infrastructure still does not belong in the catalog, and a claim about
+> _declared_ infrastructure does. All three claims deleted below are rewritten in A006.
 
 **Where it came from.** Feelsie's highest-stakes promises were about a Cloudflare account: the
 apex MX records, an Access application on the dashboard hostname, a rate-limit rule. All are
@@ -332,6 +340,15 @@ that survives — it is a correlation, not an identity. A package holds developm
 (`core` will have its own lint rules), so `@kind` stays non-derivable from the slug prefix and
 earns its place as a directive.
 
+**The counter-example arrived, and it came from the direction this entry left open.** A006's
+`root/dns/apex-mail-is-declared` is `@kind capability`, at the root, because the zone belongs to no
+package: both hostnames live in it and the apex records concern mail unrelated to this project. So
+the first root claim to be written is the exception rather than the predicted rule.
+
+That strengthens rather than weakens the nuance above. The correlation is real — the root's _other_
+plausible claims are still all development-kind — and it is now demonstrated in both directions,
+which is what a directive rather than a convention buys.
+
 ## C12 — The root project is named `root`, not `workspace` · `settled` (against crux)
 
 §3.4 chose `workspace` over `root` on the grounds that the document already uses _root_ to mean
@@ -606,5 +623,117 @@ edits were reversible, but two audit rounds caused rework and interrupted the im
 amendment freezes its work shape. This moves a required judgment earlier. It does not automate
 coverage.
 
-One occurrence makes this a watch item. A repeat will show whether Crux needs an explicit entry
-gate for coverage changes.
+**The second occurrence, from the other side.** Reviewing A002 and A003 against §5.8 and §5.9 was
+the same judgment taken at amendment time rather than after the gate, and it cost nothing to take.
+Every add gained a witness set and a coverage argument before any witness was written, and three
+gaps surfaced there that would otherwise have surfaced in an audit: an all-prohibition set on
+`checkin/form/get-does-not-write`, a route-enumeration witness that observed which routes exist
+where the claim was about what they return, and a shared marker that was the sole proof of two
+claims (§5.7).
+
+So the prescription holds and the cost is asymmetric: taken early it is a paragraph, taken late it
+is rework. That is now two occurrences and the finding is evidence rather than anecdote.
+
+**One thing this second pass found that coverage has no question for.**
+`checkin/prompt/one-per-local-date` promised that the handler "creates at most one prompt" while its
+named witness asserted "exactly one prompt exists **and** exactly one send occurred." The witness
+reached **further** than the claim. Coverage asks whether the witnesses reach the claim and there is
+no question pointing the other way, so an over-reaching witness is invisible to the audit and shows
+up only when somebody reads the pair. Worth a sentence in §5.8: the reverse mismatch is a signal the
+claim is under-stated, not that the witness is wrong.
+
+## C20 — §4.1's boundary is set by tooling, not by principle · `settled`
+
+**Where it came from.** [C1](#c1--a-claims-subject-must-be-rederivable-from-the-repository--settled)
+deleted three claims — the apex MX records, the Access application on the dashboard hostname, the
+rate-limit rule — because their state was not rederivable from a checkout. Adopting an Effect-native
+IaC framework gave each of the three a resource declaration inside the repository, and
+[`amendments/006-the-declared-infrastructure.md`](./amendments/006-the-declared-infrastructure.md)
+rewrites all three as claims.
+
+**C1 is not retracted.** The rule is right. What is wrong is that it presents its boundary as given:
+
+> ~~This line does more work than any other line in the document. Inside the checkout or outside it
+> decides whether a claim can exist…~~
+
+The line does do that work. It is also **a function of your tooling**, and adopting IaC moves it.
+F10 answered its question correctly for the tooling of the day and recorded the answer as a
+principle.
+
+**The distinction that resolves it.** A claim about **live** infrastructure still does not belong in
+the catalog. A claim about **declared** infrastructure does. §4.1 is right about the first and silent
+about the second, because with no IaC there is no second — so there was nothing for the distinction
+to attach to.
+
+**This is §5.2's supply argument, in a second place.** §5.2 already knows the witness ladder's
+ceiling is set by the ecosystem and not by the claim alone, and C15 recorded one instance of it. The
+same supply side also governs the §4.1 boundary, and the document does not say so. Two settled
+sections, one unstated connection.
+
+### The sub-finding, which is the more portable half
+
+> **A static witness needs a declarative subject.**
+
+These three claims were not strictly impossible before IaC — they were badly witnessed. The witness
+available was a person reading a CI deploy script and judging what it would produce. That is kind 4
+judging an artifact that is not the subject, and the deeper defect is that **an imperative script
+cannot be read for its resulting state.** You would have to simulate it.
+
+A declarative artifact can be read for exactly that, which is what makes a kind 1 or kind 2 witness
+possible at all. A006's claims sit at those rungs for that reason and no other. This belongs in §5.2
+beside the ladder, because it names a precondition the ladder assumes and never states.
+
+### What does not move, and should be said in the same breath
+
+The boundary moves for declarative configuration. It does not move for:
+
+- **runtime state** — an empty backup bucket. A004's deleted second witness stays deleted.
+- **out-of-band human acts** — clicking a verification link in an email. A002's draft-1 clause
+  returns as a claim about the declaration, never about the verification.
+- **drift** — the account diverging from the declaration. Still monitoring, still nothing crux
+  catches. What changes is that there is now an artifact on the repository side to diff against,
+  where before there was nothing at all.
+
+## C21 — No artifact exists for work that changes the witness supply · `repeated`
+
+**Where it came from.** Two units of work in this repository changed no claims and changed what
+claims are **possible**:
+
+| The work                                            | What it changed                                                                                                                                      |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `build: integrate Effect tsgo with Vite+ lint (#2)` | created the lint witness supply — [C15](#c15--a-third-party-type-aware-linter-is-a-witness-supply--settled), F11, F13                                |
+| adopting Alchemy                                    | moves the §4.1 boundary ([C20](#c20--41s-boundary-is-set-by-tooling-not-by-principle--settled)) and raises the ladder for every infrastructure claim |
+
+Neither is an **amendment** — §7 defines one as a set of claim changes, and neither proposes any.
+Neither is **fog** — both are statable, so §10 refuses them. Neither earns a **rationale** — §11.2
+wants hard to reverse, surprising, and a real trade-off, and a lint integration is none of the three.
+
+So both produced no artifact. The second needed a migration plan long enough to be worth writing
+down, and it went to `.scratch/ALCHEMY-MIGRATION.md` — a filename crux does not know about, in the
+one directory whose contents crux does specify.
+
+**Why this is the gap worth closing.** A claim change moves one promise. A supply change moves the
+ceiling for every promise that comes after it, including ones nobody has thought of. §7 gates the
+first and nothing gates or records the second, which inverts the stakes. §13.1 sequences the tools
+crux will build; it does not notice that the tooling **around** crux is what decides what the catalog
+can hold.
+
+**Not proposing the fix.** Either a fourth amendment operation, or a named artifact beside the
+amendment, and the choice is crux's. Recording that the gap has now been hit twice, and that the
+second hit was the more consequential of the two units of work in this repository's history.
+
+## C22 — An amendment has no vintage · `watch`
+
+A002 through A004 were authored under §5.9's retracted predecessor and then sat unenacted while the
+framework moved. Nothing in the repository marked them stale: no rule version on the amendment, no
+form error, no marker. A005 exists because a person remembered, and A002 and A003 were revised three
+sessions later for the same reason.
+
+Crux checks claims against witnesses continuously and checks amendments against the framework never.
+An amendment is the one artifact that sits unenacted long enough for the framework to move underneath
+it — a rationale grounding a deleted claim is the same shape at the other end of the pipeline (§11.5),
+reported and not an error.
+
+**Deliberately filed low.** The operator's ruling, and it is the right one: an underspecified
+framework moving under an unenacted artifact is expected rather than defective, and this stops
+mattering the moment crux stabilises. Recorded so the observation is not lost, not as a request.
