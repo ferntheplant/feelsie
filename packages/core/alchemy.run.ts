@@ -3,19 +3,13 @@
 // It is its own stack rather than a slice of one shared stack for a single reason, and
 // the reason is not cadence: destroying the dashboard must not destroy the database.
 // `apps/*` read this stack; they never declare it.
-//
-// This module is plan-time only — no Worker ever bundles it — which is why it may resolve
-// `migrationsDir` from `import.meta.url`. A module that IS bundled may not: `new URL(...,
-// import.meta.url)` is evaluated at cold start inside workerd, where it dies with
-// `Invalid URL string`. Resolving it here also makes the path independent of the working
-// directory the deploy was launched from.
-import { fileURLToPath } from "node:url";
-
 import { ALCHEMY_DEV, localState } from "alchemy";
+import type { InputProps } from "alchemy";
 import * as Cloudflare from "alchemy/Cloudflare";
 import { Effect, Layer } from "effect";
 
 import { CoreStack } from "./src/Stack.ts";
+import type { CoreStackShape } from "./src/Stack.ts";
 
 // State says which resources already exist, so it has to outlive the machine that made
 // them. A solo developer on two laptops plus a CI runner is three empty `.alchemy/`
@@ -44,12 +38,33 @@ export default CoreStack.make(
   { providers: Cloudflare.providers(), state },
   Effect.gen(function* () {
     const database = yield* Cloudflare.D1.Database("Database", {
+      // Relative, as Alchemy's D1 page writes it, and resolved against the working
+      // directory of whoever runs the deploy — which is why the house rule spells that
+      // directory out (`vp exec -F @feelsie/core`) rather than leaving it to the shell.
+      // An absolute path computed from `import.meta.url` would survive a deploy launched
+      // from anywhere, and it is still the wrong choice: `migrationsDir` is a persisted
+      // property of the resource, so the path is written into the shared state store and
+      // compared against on the next plan. A checkout at a different path — CI, a second
+      // laptop — then differs in props and plans a pointless update. The path has to mean
+      // the same thing on every machine, and only a relative one does.
+      //
       // Files sort by numeric prefix and apply in order, with the applied set skipped.
-      // `0001-core.sql` is already named for it and already in the package's `files`
-      // array, so this reuses the migration the tests run rather than duplicating it.
-      migrationsDir: fileURLToPath(new URL("./migrations", import.meta.url)),
+      // The `0001_core.sql` spelling is Alchemy's: `listSqlFiles` takes the prefix as
+      // `name.split("_")[0]`, so an underscore is what the sort actually reads.
+      migrationsDir: "./migrations",
     });
 
-    return { database };
+    // Scalars, because a stack output cannot be a resource — an app binds the database
+    // through the `coreDatabase` ref in `src/Stack.ts`, not through this. See that file.
+    //
+    // `satisfies` is what ties this stack to the handle. `Stack.make` infers its output
+    // type and never checks it against the handle's `Shape`, so without this a renamed or
+    // misspelled key type-checks here and fails at plan time in whichever app reads it.
+    // `InputProps` rather than the shape itself: a shape declares the RESOLVED types a
+    // consumer sees, and what is returned here are the unresolved plan-time Outputs.
+    return {
+      databaseId: database.databaseId,
+      databaseName: database.databaseName,
+    } satisfies InputProps<CoreStackShape>;
   }),
 );

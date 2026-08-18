@@ -13,6 +13,7 @@ catalogMode: prefer
 catalog:
   "@commitlint/cli": ^21.2.1
   "@commitlint/config-conventional": ^21.2.0
+  "@effect/platform-bun": 4.0.0-rc.110
   "@effect/platform-node": 4.0.0-rc.110
   "@effect/tsgo": 0.36.5
   "@effect/vitest": 4.0.0-rc.110
@@ -28,7 +29,16 @@ catalog:
 
 # Vite+ ships its own Vite core under an alias; the override keeps every
 # transitive `vite` on that same build rather than the public package.
+#
+# `@effect/platform-bun` is here for a different reason: nothing declares it, and
+# pnpm installs it anyway because `alchemy` names it an optional peer. It cannot be
+# excluded — `ignoredOptionalDependencies` does not reach optional peers — so the
+# choice is a pinned copy or an unpinned one. Unpinned, its range
+# (`>=4.0.0-beta.105 || >=4.0.0`) is free to resolve to a build that disagrees with
+# `effect@4.0.0-rc.110` and put a second Effect in the tree. On Node it is the branch
+# `Util/PlatformServices.ts` never takes, so the copy costs nothing but disk.
 overrides:
+  "@effect/platform-bun": "catalog:"
   vite: "catalog:"
   vitest: "catalog:"
 
@@ -43,6 +53,7 @@ peerDependencyRules:
 minimumReleaseAgeExclude:
   - effect@4.0.0-rc.110
   - "@effect/vitest@4.0.0-rc.110"
+  - "@effect/platform-bun@4.0.0-rc.110"
   - "@effect/platform-node@4.0.0-rc.110"
   - alchemy@2.0.0-beta.72
 

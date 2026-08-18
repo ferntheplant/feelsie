@@ -19,6 +19,7 @@ survives even after the code stops building.
 
 ## What is here
 
-| Spike                                                       | Question                                              | Answer                                |
-| ----------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------- |
-| [`alchemy-credentials-spike`](./alchemy-credentials-spike/) | Does an Alchemy test run need Cloudflare credentials? | required, never used — see its README |
+| Spike                                                       | Question                                              | Answer                                                   |
+| ----------------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------- |
+| [`alchemy-credentials-spike`](./alchemy-credentials-spike/) | Does an Alchemy test run need Cloudflare credentials? | required, never used — see its README                    |
+| [`cross-stack-d1-spike`](./cross-stack-d1-spike/)           | Can a Worker bind a D1 database another stack owns?   | yes, through `Resource.ref` — not through a stack output |

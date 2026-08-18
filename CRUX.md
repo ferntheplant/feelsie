@@ -87,13 +87,24 @@ token_. Nobody has an opinion about which context service holds the time zone.
 survives a rewording of the prose.
 
 The prefix names a project, and a project is whatever a `GLOSSARY.md` declares with `@project`.
-Two are declared today: `root` at the repository root, and `core` in `packages/core`. `checkin`
-and `dashboard` get theirs when their packages exist.
 
-**Feelsie is one project's worth of vocabulary, spread over several slug prefixes.** The words all
-live in the root [`GLOSSARY.md`](./GLOSSARY.md) — measure, entry, check-in, prompt, token, local
-date, send hour, dashboard, streak. A package glossary declares its prefix and points back there;
-it holds no words of its own, and it should not start holding any while one list still fits.
+**Feelsie is one project, and will not become more than one.** Core, check-in, and dashboard are
+three deliverables of a single product: they answer to the same requirements and they are
+described by the same words. A second project would mean a second vocabulary, and there is no
+second vocabulary to hold — so no package declares `@project`, and the root
+[`GLOSSARY.md`](./GLOSSARY.md) is the only one. This is a decision about this repository, not
+about crux: a monorepo whose packages are separate products, crux's own included, splits
+differently.
+
+**The prefixes have not caught up.** `core/` is enacted in the catalog and the amendments have
+already spent `checkin/`, `dashboard/`, and `root/`, all of them written when four projects were
+planned. Collapsing them to one prefix is [`.scratch/ONE-PROJECT.md`](./.scratch/ONE-PROJECT.md),
+and until it lands `packages/core/GLOSSARY.md` keeps its `@project core` — deleting it first
+would make every enacted slug **misfiled**.
+
+**A package glossary holds no words.** Not now, and not when one is reintroduced for some other
+reason. The words all live at the root — measure, entry, check-in, prompt, token, local date,
+send hour, dashboard, streak — and one list still fits.
 
 **So a new word goes in the root `GLOSSARY.md`**, settled before the claims that use it. Add a
 package-level entry only when a word means something genuinely narrower inside that package than

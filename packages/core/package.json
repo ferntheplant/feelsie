@@ -15,10 +15,18 @@
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs"
     },
+    "./d1": {
+      "types": "./dist/d1.d.mts",
+      "import": "./dist/d1.mjs"
+    },
+    "./stack": {
+      "types": "./dist/Stack.d.mts",
+      "import": "./dist/Stack.mjs"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "vp pack --dts",
+    "build": "vp pack src/index.ts src/d1.ts src/Stack.ts --dts",
     "test": "vp test run --reporter=minimal"
   },
   "dependencies": {

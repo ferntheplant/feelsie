@@ -12,8 +12,10 @@ entry = [
 ]
 ignoreDependencies = [
   # An optional peer of `alchemy`, loaded through `await import("@effect/platform-node/…")`
-  # behind a `typeof Bun !== "undefined"` check in Alchemy's `Util/PlatformServices.ts`.
-  # No static import exists to find, and on Node it is the branch that always runs.
+  # in the ELSE of the `typeof Bun !== "undefined"` check in Alchemy's
+  # `Util/PlatformServices.ts` — the Bun check guards `@effect/platform-bun`, and this is
+  # the branch a Node repo always takes. It is declared because it is used; it is listed
+  # here because the import is dynamic and there is no static one for fallow to find.
   "@effect/platform-node",
 ]
 dynamicallyLoaded = [

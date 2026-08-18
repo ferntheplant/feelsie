@@ -139,11 +139,23 @@ vp exec -F @feelsie/core alchemy deploy --stage prod
 fix this: `cache: false` and `untrackedEnv` are mutually exclusive in the task type, and a deploy
 may be neither cached nor starved of credentials.
 
-**The working directory is not cosmetic.** `alchemy.run.ts` is resolved against it, and so is
-`localState()`'s `.alchemy/` — deploying one stack from two directories gives it two local state
-stores that disagree about what exists. `-F` makes the directory a property of the command rather
-than of the shell. `migrationsDir` is deliberately immune: `alchemy.run.ts` resolves it from
-`import.meta.url`, so it does not care where the deploy was launched.
+**The working directory is not cosmetic.** Three things resolve against it: `alchemy.run.ts`
+itself, `localState()`'s `.alchemy/`, and `migrationsDir`. Deploying one stack from two
+directories gives it two local state stores that disagree about what exists, and a
+`migrationsDir` that finds nothing. `-F` makes the directory a property of the command rather
+than of the shell.
+
+**`migrationsDir` is relative, and that is a decision.** An absolute path computed from
+`import.meta.url` would survive a deploy launched from anywhere, and it is still wrong:
+`migrationsDir` is a persisted property of the D1 resource, so the path is written into the
+shared state store and compared against on the next plan. A checkout at a different path — CI, a
+second laptop — then differs in props and plans a pointless update, with someone's home directory
+sitting in shared infrastructure state. Relative is the only spelling that means the same thing on
+every machine, which is why the `-F` rule above is load-bearing rather than tidy.
+
+**Migration files are named `NNNN_name.sql`, with an underscore.** Alchemy's `listSqlFiles`
+takes the ordering prefix as `name.split("_")[0]`. A hyphen happens to survive `parseInt`, so
+`0001-core.sql` sorts correctly today by accident; the underscore is what the code reads.
 
 **Omitting `--stage` is a decision, not a default.** It means `dev_$USER` — a personal stage with
 its own database. Production is `--stage prod`.
@@ -151,10 +163,43 @@ its own database. Production is `--stage prod`.
 Two mechanical traps, both found the expensive way:
 
 - **A module a Worker bundles may not compute paths from `import.meta.url`.** It is evaluated
-  at cold start inside workerd, which dies with `Invalid URL string`. Plan-time-only modules
-  like `alchemy.run.ts` are free to.
+  at cold start inside workerd, which dies with `Invalid URL string`. A plan-time-only module
+  like `alchemy.run.ts` may — it just should not, for the state-store reason above.
 - **`main: import.meta.url` reads the module's `default` export.** A Worker exported by name
   bundles to `"default" is not exported`, at deploy time rather than at type-check time.
+
+## A stack has two exits, and they carry different things
+
+**A resource leaves a stack through `Resource.ref`, never as an output.** Putting a resource in
+a stack's `Shape` type-checks, and `yield* CoreStack` then hands back an `ObjectExpr` proxy that
+dies at plan time in the consuming stack with `Cannot coerce Output<stackRef(…).database> to a
+string` — inside `QueryDatabaseBinding`'s ``host.bind`${database}` ``, which needs a `LogicalId`
+string a proxy cannot give. The mechanism that works names the stack and the logical id:
+
+```ts
+export const coreDatabase = Cloudflare.D1.Database.ref("Database", { stack: "feelsie-core" });
+```
+
+**A scalar leaves through the shape**, which is all a shape can carry — Alchemy's own multi-stack
+walkthrough puts nothing else in one. Both resolve at plan time against the current stage, so a
+`pr-42` Worker binds the `pr-42` database, and both require the owning stack to be deployed
+first. The evidence is [`prototypes/cross-stack-d1-spike/`](./prototypes/cross-stack-d1-spike/).
+
+**`Stack.make` never checks its effect against the handle's `Shape`.** The type parameter is
+free, so a renamed or misspelled output key compiles and fails at plan time in whichever app
+reads it. Every stack ends its effect with `satisfies InputProps<TheShape>` — `InputProps` and
+not the shape itself, because a shape declares the resolved types a consumer sees while the
+effect returns unresolved plan-time Outputs.
+
+**A stack name is a deployed identifier, not a label.** It is the key `Resource.ref({ stack })`
+looks up, the prefix `createPhysicalName` builds every physical name from
+(`feelsie-core-Database-prod-…`), and part of how state rows are keyed. After a stack's first
+deploy, renaming it provisions a second copy of everything and orphans the first. Stacks are
+`feelsie-<unit>`: the prefix scopes them inside a Cloudflare account that may hold other
+projects, and the unit is the blast radius — what `alchemy destroy` takes with it. **A stack
+boundary answers a deployment question and is aligned with nothing in `docs/catalog/`.** Claims
+are free to be renamed, resliced, and reprefixed without touching infrastructure, which is the
+whole point of keeping the two apart.
 
 ## Definition of done
 

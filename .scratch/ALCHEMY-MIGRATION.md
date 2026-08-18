@@ -4,7 +4,10 @@
 
 > **Phases 0, 1, and 2 have landed.** The spike answered (§7, and
 > [`prototypes/alchemy-credentials-spike/`](../prototypes/alchemy-credentials-spike/)), the
-> dependencies and house rules are in, and the Core Stack exists. Phases 3–6 are the amendments
+> dependencies and house rules are in, and the Core Stack exists. A second spike then ran
+> against §2's cross-stack assumption and disproved it — see
+> [`prototypes/cross-stack-d1-spike/`](../prototypes/cross-stack-d1-spike/) and the correction
+> in §2. Phases 3–6 are the amendments
 > A002, A003, A004, and A006, and each is gated by something this document does not control —
 > F1 and F7 are still open fog, and reopening F10 for A006 is an operator's call.
 
@@ -28,35 +31,53 @@ Two facts make it fit rather than merely work:
   `core`'s `Database` is already that pattern, hand-rolled. It gains a third implementation and
   loses nothing.
 - **`migrationsDir` points at a folder of numbered `.sql` files**, applied in order on every
-  deploy with the applied set skipped. `packages/core/migrations/0001-core.sql` already has that
-  name and is already in the package's `files` array.
+  deploy with the applied set skipped. `packages/core/migrations/0001_core.sql` already has that
+  name and is already in the package's `files` array. (It was `0001-core.sql`; the underscore is
+  what `listSqlFiles` actually reads the ordering prefix from.)
 
 ## 2. Target shape
 
-Three stacks, matching the three projects the catalog already names. The stack boundary and the
-slug prefix become the same boundary, which is worth more than it sounds: a witness scoped to one
-stack is scoped to one project's claims.
+Three stacks, one per deployable unit. A stack boundary is a **blast radius** and nothing else —
+it answers "what does `alchemy destroy` take with it", which is a deployment question with a
+deployment answer.
+
+**It is deliberately not aligned with anything in the catalog.** An earlier draft of this section
+paired each stack with a slug prefix and called them one boundary. They are not the same kind of
+thing and they should be free to move independently: a slug prefix is a documentation namespace
+that a rename costs a `sed`, while a stack name is a deployed identifier — the key
+`Resource.ref({ stack })` looks up, the prefix `createPhysicalName` builds every resource name
+from (`feelsie-core-Database-prod-…`), and part of how state rows are keyed. Renaming a stack
+after its first deploy provisions a second copy of everything and orphans the first. Claims
+should never be able to drag infrastructure behind them.
 
 ```
 packages/core/
   alchemy.run.ts          # Core Stack — the D1 database and its migrations
-  src/Stack.ts            # the typed handle checkin and dashboard import
-  src/database.ts         # Cloudflare.D1.Database("Database", { migrationsDir })
+  src/Stack.ts            # the stack handle, and the `coreDatabase` ref apps bind
   src/d1.ts               # Layer<Database> over Cloudflare.D1.QueryDatabase   ← new
   src/*.ts                # unchanged: pure logic over the Database service
-  migrations/0001-core.sql  # unchanged
+  migrations/0001_core.sql  # renamed from 0001-core.sql
 apps/checkin/
-  alchemy.run.ts          # yield* CoreStack — Worker, cron, email send + routing
+  alchemy.run.ts          # yield* coreDatabase — Worker, cron, email send + routing
   src/worker.ts
 apps/dashboard/
-  alchemy.run.ts          # yield* CoreStack — SvelteKit site, Access application
+  alchemy.run.ts          # yield* coreDatabase — SvelteKit site, Access application
   src/...
 ```
 
 Alchemy's monorepo guidance says start with one stack and split when packages deploy on different
 cadences or when you need to destroy one without the other. **The second reason applies here and
-is not negotiable**: destroying the dashboard must not destroy the database. Cross-stack reads are
-`const core = yield* CoreStack`, resolved at plan time against the current stage.
+is not negotiable**: destroying the dashboard must not destroy the database.
+
+**How the crossing works was wrong here, and a spike caught it.** This document said cross-stack
+reads are `const core = yield* CoreStack`, and `packages/core` shipped a `CoreStackShape` holding
+the D1 resource to match. A resource cannot leave a stack that way: `yield* CoreStack` returns
+`Output.ToOutput` of the shape, so the field is a plan-time proxy, and binding it dies with
+`Cannot coerce Output<stackRef(…).database> to a string`. A stack has two exits —
+`Cloudflare.D1.Database.ref("Database", { stack: "feelsie-core" })` for the resource, the shape
+for scalars — and both resolve against the current stage, so a `pr-42` Worker still binds the
+`pr-42` database. [`prototypes/cross-stack-d1-spike/`](../prototypes/cross-stack-d1-spike/) is the
+run; the rule is in `AGENTS.md`.
 
 ## 3. What changes in `core`
 
@@ -107,11 +128,17 @@ over anything `Test.make` passes, so an unconditional `Cloudflare.state()` fails
 the original document did not anticipate, because it read the state store as a choice about
 durability rather than as one that reaches into the test path.
 
-**`@effect/platform-bun` was dropped, not catalogued.** It is an _optional_ peer of `alchemy`, and
-Alchemy's `Util/PlatformServices.ts` only reaches for it behind `typeof Bun !== "undefined"`. This
-repo runs Node (`engines.node >= 22.18.0`), so on every path we take it is the branch that never
-runs. `@effect/platform-node` stays, and needs a `fallow.toml` `ignoreDependencies` entry because
-its only import is dynamic.
+**`@effect/platform-bun` is pinned by an override, because it cannot be dropped.** It is an
+_optional_ peer of `alchemy`, and `Util/PlatformServices.ts` only reaches for it behind
+`typeof Bun !== "undefined"` — on Node, the branch that never runs. Not declaring it does not
+remove it: pnpm installs optional peers anyway, and `ignoredOptionalDependencies` does not reach
+them (both checked, from a deleted lockfile). So the real choice was a pinned copy or an unpinned
+one, and unpinned its range (`>=4.0.0-beta.105 || >=4.0.0`) is free to resolve to a build that
+disagrees with `effect@4.0.0-rc.110` — risk 3, on the one package the first pass reasoned itself
+out of guarding. It is in the catalog with an `overrides` entry, the same shape `vite` and
+`vitest` already use. `@effect/platform-node` is declared rather than overridden, because it is
+the branch Node always takes; it needs a `fallow.toml` `ignoreDependencies` entry because its
+only import is dynamic.
 
 **Phase 2 — the core stack.** ✅ `packages/core/alchemy.run.ts`, `src/Stack.ts`, and `src/d1.ts`.
 `core`'s thirteen tests still run against `node:sqlite`, unchanged, and still pass — which is the
@@ -122,14 +149,21 @@ rather than to the code:
 
 - **`src/database.ts` was already taken.** It holds the `Database` capability service, and §2
   assigned the same path to the D1 resource. The resource is declared inline in `alchemy.run.ts`
-  instead, which is better: that module is plan-time only, so it is free to resolve
-  `migrationsDir` from `import.meta.url` and be independent of the deploy's working directory. A
-  module a Worker bundles could not.
+  instead, which is plan-time only and therefore free to compute paths from `import.meta.url` —
+  a module a Worker bundles is not. It should not, though, and the first pass did:
+  `migrationsDir` is a persisted property of the resource, so an absolute path is written into
+  the shared state store and diffed on the next plan, and a checkout at a different path plans a
+  pointless update with someone's home directory in it. It is `"./migrations"`, as Alchemy's D1
+  page writes it, resolved against the working directory `vp exec -F` already pins.
 - **`CoreStack` uses the reference form, not the class form.** `class S extends Stack<S>()(name,
 options, effect) {}` type-checks and dies at runtime with `Fiber.runLoop: Not a valid effect:
 undefined` — only the reference form is piped through Alchemy's `effectClass`. `src/Stack.ts`
   declares `Stack<CoreStack, CoreStackShape>()("feelsie-core")` and `alchemy.run.ts` calls
   `.make(options, effect)` on it. This is a beta-72 types-vs-implementation mismatch; see risk 1.
+- **`Stack.make` does not check its effect against the handle's `Shape`.** The type parameter is
+  free, so a misspelled output key compiles — verified by misspelling one and watching
+  `vp check` pass. Every stack now ends its effect with `satisfies InputProps<TheShape>`, which
+  is what makes the handle a contract rather than a comment.
 
 **Phase 3 — the check-in Worker (A002).** `Cloudflare.Worker` with `Cloudflare.Workers.cron`,
 `Cloudflare.Email.SendEmail` for the send binding, `Cloudflare.Email.Routing` / `Address` / `Rule`
@@ -299,9 +333,10 @@ either passes or it does not.
 2. **Two bundlers.** `vp` owns build and test; Alchemy ships its own wrangler-free adapter and
    bundles Workers at deploy. They need not fight — `vp run ready` never deploys — but the
    SvelteKit path runs Vite twice over, once under `vp` and once under `alchemy dev`.
-3. **Version alignment.** `@effect/platform-node` and `@effect/platform-bun` must match
-   `effect@4.0.0-rc.110` exactly and must not drag a second Effect into the tree. Catalog pins,
-   same as `@effect/tsgo` and `oxlint-tsgolint` got in F13.
+3. ~~**Version alignment.**~~ **Closed.** `@effect/platform-node` and `@effect/platform-bun` must
+   match `effect@4.0.0-rc.110` exactly and must not drag a second Effect into the tree. Both are
+   catalogued and pinned — node as a declared devDependency, bun through `overrides`, because it
+   is installed whether or not anything declares it. One `effect` in the lockfile, checked.
 4. ~~**MX records are unverified.**~~ **Checked and cleared.** `Cloudflare/DNS/Record.ts` lists
    `"MX"` in its record-type union and carries a `priority` field documented as "required for `MX`
    and `URI` records". The second row of A006's table is declarable.

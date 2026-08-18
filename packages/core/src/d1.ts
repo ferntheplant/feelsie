@@ -67,7 +67,9 @@ const shapeOf = (client: Cloudflare.D1.QueryDatabaseClient): DatabaseShape => ({
 
 /**
  * `Database`, backed by a D1 binding. Yielded during a Worker's init phase, where the
- * `Database` resource comes from `yield* CoreStack`.
+ * resource comes from `yield* coreDatabase` — the `Resource.ref` in `Stack.ts`, NOT from
+ * a field on `yield* CoreStack`. A stack output cannot be a resource; the run that
+ * settles that is `prototypes/cross-stack-d1-spike/`.
  */
 export const layer = (database: Cloudflare.D1.Database): Layer.Layer<Database, never, Cloudflare.D1.QueryDatabase> =>
   Layer.effect(Database, Effect.map(Cloudflare.D1.QueryDatabase(database), shapeOf));

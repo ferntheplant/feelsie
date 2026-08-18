@@ -6,7 +6,7 @@ import { Effect, Option } from "effect";
 import { Database, DatabaseError } from "#core";
 import type { DatabaseShape, SqlRow, SqlStatement } from "#core";
 
-const migration = readFileSync(new URL("../../migrations/0001-core.sql", import.meta.url), "utf8");
+const migration = readFileSync(new URL("../../migrations/0001_core.sql", import.meta.url), "utf8");
 
 const runStatement = (database: DatabaseSync, statement: SqlStatement): void => {
   database.prepare(statement.text).run(...statement.parameters);
