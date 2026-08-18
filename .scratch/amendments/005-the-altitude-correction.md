@@ -1,6 +1,7 @@
 # A005 — the altitude correction
 
-**Project**: `core` (`packages/core`) · **Status**: proposed · **Gated by**: nothing
+**Project**: `core` (`packages/core`) · **Status**: enacted by `fix(core): align claims with
+reader-visible failures (#5)` · **Gated by**: nothing
 
 A001 shipped fourteen claims. Six of them describe checks rather than promises. This replaces
 those six with two, tightens three test witnesses, and **changes no production code and no

@@ -207,6 +207,18 @@ most consequential ruling of the exercise and the one with the clearest cost: se
 [C1](./CRUX-FEEDBACK.md) for the argument and
 [`amendments/004-the-backup.md`](./amendments/004-the-backup.md) for what it gives up.
 
+**Refined, later, by the tooling changing under it.** The answer stands for the question as asked,
+and the question conflated two things: a claim about **live** infrastructure, which still does not
+belong in the catalog, and a claim about **declared** infrastructure, which does. There was no
+declaration to claim about when this was ruled, so the distinction had nothing to attach to — what
+this item recorded as a principle was a property of the tooling of the day.
+
+Adopting Alchemy gives every one of the three a resource in the repository, and
+[`amendments/006-the-declared-infrastructure.md`](./amendments/006-the-declared-infrastructure.md)
+is this amendment rewritten. The rate-limit rule returns as a different mechanism — a Worker
+binding rather than a zone rule — and it is the better claim for it. Drift between declaration and
+account is still monitoring, and still nothing crux catches.
+
 ### F9 — Which domain? · cleared by judgment
 
 **It stays out of the repository.** Documentation says `example.com`; the real domain is
