@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+  - prototypes/*
   - tools/*
 
 # `prefer` makes `vp add` reach for a catalog entry when one exists, so a second
@@ -12,9 +13,11 @@ catalogMode: prefer
 catalog:
   "@commitlint/cli": ^21.2.1
   "@commitlint/config-conventional": ^21.2.0
+  "@effect/platform-node": 4.0.0-rc.110
   "@effect/tsgo": 0.36.5
   "@effect/vitest": 4.0.0-rc.110
   "@types/node": ^24
+  alchemy: 2.0.0-beta.72
   effect: 4.0.0-rc.110
   oxlint: 1.77.0
   oxlint-tsgolint: 7.0.2001
@@ -40,6 +43,10 @@ peerDependencyRules:
 minimumReleaseAgeExclude:
   - effect@4.0.0-rc.110
   - "@effect/vitest@4.0.0-rc.110"
+  - "@effect/platform-node@4.0.0-rc.110"
+  - alchemy@2.0.0-beta.72
 
 allowBuilds:
   msgpackr-extract: false
+  sharp: true
+  workerd: true

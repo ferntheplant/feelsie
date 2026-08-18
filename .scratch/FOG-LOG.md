@@ -365,3 +365,77 @@ after the metadata migration started. The operator revised the amendment. See **
 
 The amendment named every affected marker and rationale. The implementation still had to verify
 the references and recover the coverage rule. The stale C10 record gave the opposite rule.
+
+---
+
+## 2026-08-18 — adopting Alchemy, phases 0 through 2
+
+The spike, the dependency shape, and the Core Stack. No claims changed, which was the point: this
+was a change to the witness supply, and the catalog is identical on both sides of it.
+
+### Clerical — candidates for tooling
+
+**The install landed in the wrong place and nothing said so.** `vp add --workspace-root` put
+`alchemy`, `effect`, and both `@effect/platform-*` packages into the root's `dependencies`, with
+`effect` pinned to a literal version beside three `catalog:` entries. Every one of those is a
+house-rule violation — the root carries devDependencies only, and versions come from the catalog —
+and the only thing that noticed was a person reading the diff. `vp check` was green throughout.
+
+**Four files had to agree about one new directory.** `prototypes/` needed an entry in
+`pnpm-workspace.yaml`, in `fallow.toml`'s `[workspaces]` patterns, a `tsconfig.json` of its own,
+and a line in `AGENTS.md`. Miss any one and the failure is silent rather than loud: no workspace
+entry means no dependency resolution, no fallow pattern means the package is invisible to dead-code
+analysis. This is **C4** in a new costume — the tool owns the cross-references, and there is no
+tool.
+
+**Recording the same finding in three registers.** Each of the spike's three mechanical
+discoveries went into `AGENTS.md` as a rule, into the spike's `README.md` as a narrative, and into
+`ALCHEMY-MIGRATION.md` as a correction to what the document had assumed. The three audiences are
+genuinely different, so the duplication is not obviously wrong — but nothing links them and
+nothing will notice when one drifts.
+
+### Thinking — never automate
+
+**Deciding that a required-but-unused credential does not break rederivability.** The whole
+migration hung on this. Alchemy demands a Cloudflare credential before it knows the stack is fully
+emulated, and then never authenticates with it. Reading that as "the claim is still rederivable
+from a checkout" is a judgment about what a witness _depends_ on rather than what it _asks for_,
+and no tool offered the distinction. See **C23**.
+
+**Choosing to drop `@effect/platform-bun` rather than catalogue it.** The recommended install
+command names it, so the default move is to pin it and move on. Establishing that it is an optional
+peer, dynamically imported behind `typeof Bun !== "undefined"`, and therefore dead on every path
+this repo takes, meant reading Alchemy's `Util/PlatformServices.ts` and confirming that its
+seventeen other mentions are all inside generated-code template strings. The house rule says dead
+code gets deleted; applying it to a dependency required knowing which branch runs.
+
+**Reading the D1 client's signature as a claim about failure.** `Cloudflare.D1.QueryDatabase`'s
+executors are typed `Effect<A, never, RuntimeContext>` — a SQL error is a defect, not a typed
+failure. `DatabaseShape` promises `DatabaseError`. Nothing would have failed loudly if `src/d1.ts`
+had let defects through; the `node:sqlite` tests would still pass, and the difference would first
+appear as a killed fiber in production. The adapter converts them, and re-raises interruption
+untouched, because a cancelled request is not a database failure.
+
+### Framework friction
+
+**A build change that raises the witness ceiling still has no artifact.** This is **C21**, third
+occurrence, and it is now the most expensive one. The work produced a spike, a harness script, four
+house rules, two corrections to its own design document, and a `watch`-status finding — and the
+only place any of it is tracked is a `.scratch/` markdown file that says "proposed" at the top and
+is maintained by remembering to. The catalog is unchanged, correctly, and so the repository's own
+records show that nothing happened.
+
+**The design document was wrong in two places, and being wrong was cheap.** §2's file table
+assigned `src/database.ts` to the D1 resource, which is already the `Database` service, and §9.3's
+class form dies at runtime. Both were caught by running the code within an hour. Worth recording
+because the document was written carefully from twenty pages of documentation and still got the two
+things wrong that only a run could settle — which is an argument for the spike gate, not against
+the document.
+
+### Re-derived at session start
+
+The Alchemy docs pages named in §8 are the current API; the GitHub README, the vendored
+`llms.*.txt`, and two of the three Context7 indexes describe the v0.x API and share almost no
+surface with it. The installed package's own `src/` shipped in the tarball and was the cheapest
+source of truth by a wide margin — every API question in this session was settled by reading
+`node_modules/alchemy/src/`, not by reading documentation.

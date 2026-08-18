@@ -4,5 +4,5 @@
     "lib": ["ES2023", "WebWorker"],
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "alchemy.run.ts"]
+  "include": ["src/**/*.ts", "alchemy.run.ts", "spike.test.ts"]
 }

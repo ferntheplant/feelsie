@@ -109,5 +109,11 @@ export default defineConfig({
     testTimeout: 30_000,
     // Suites that stand up a real harness in `beforeAll` need the same margin.
     hookTimeout: 30_000,
+    env: {
+      ALCHEMY_DEV: "1",
+      CI: "1",
+      CLOUDFLARE_ACCOUNT_ID: "00000000000000000000000000000000",
+      CLOUDFLARE_API_TOKEN: "placeholder-not-a-real-token",
+    },
   },
 });

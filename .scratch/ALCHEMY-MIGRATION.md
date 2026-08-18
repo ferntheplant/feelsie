@@ -1,6 +1,12 @@
 # Adopting Alchemy
 
-**Status**: proposed · **Changes no claims by itself** · **Gated by**: the spike in §7
+**Status**: phases 0–2 done · **Changes no claims by itself** · **Gate cleared**: the spike in §7
+
+> **Phases 0, 1, and 2 have landed.** The spike answered (§7, and
+> [`prototypes/alchemy-credentials-spike/`](../prototypes/alchemy-credentials-spike/)), the
+> dependencies and house rules are in, and the Core Stack exists. Phases 3–6 are the amendments
+> A002, A003, A004, and A006, and each is gated by something this document does not control —
+> F1 and F7 are still open fog, and reopening F10 for A006 is an operator's call.
 
 Alchemy becomes the house IaC: every Cloudflare resource this project uses is declared in
 TypeScript, as an Effect, inside the repository. `wrangler.jsonc` never gets written.
@@ -83,23 +89,68 @@ invalidated by this migration.** One witness improves — see §5.
 
 Each is independently mergeable and each leaves `vp run ready` green.
 
-**Phase 0 — the spike.** §7. Nothing below starts until it answers.
+**Phase 0 — the spike.** ✅ §7. Answered: credentials are required and never used. See
+[`prototypes/alchemy-credentials-spike/`](../prototypes/alchemy-credentials-spike/) and the
+`test.env` block in [`vite.config.ts`](../vite.config.ts).
 
-**Phase 1 — dependencies and house rules.**
-`alchemy@next`, `@effect/platform-node`, `@effect/platform-bun` into the catalog in
-`pnpm-workspace.yaml`, pinned exactly, matching `effect@4.0.0-rc.110`. `.alchemy/` into
-`.gitignore`. A house-rule section in `CLAUDE.md` next to the Effect and Vite+ sections, saying:
-infrastructure is declared in `alchemy.run.ts`, never in `wrangler.jsonc`; state files are never a
-witness subject; a resource that cannot be emulated locally is claimed by what the repository
-declares, never by what the cloud reports.
+**Phase 1 — dependencies and house rules.** ✅ `alchemy@2.0.0-beta.72` and
+`@effect/platform-node@4.0.0-rc.110` into the catalog in `pnpm-workspace.yaml`, pinned exactly.
+`.alchemy/` into `.gitignore`, `**/alchemy.run.ts` into `fallow.toml`'s entry list. The house-rule
+section landed in `AGENTS.md` as written, plus the two mechanical traps the spike found.
 
-**Phase 2 — the core stack.** `Cloudflare.D1.Database("Database", { migrationsDir: "./migrations" })`,
-`src/Stack.ts`, and `src/d1.ts`. `core`'s existing tests keep running against `node:sqlite` and
-prove the migration did not touch pure logic.
+**The state store is chosen at plan time, not declared.** `Cloudflare.state()` for real deploys —
+state has to be shared across machines and CI, and a per-machine `.alchemy/` reads an absent row as
+"create it", which is how you get a second D1 database. `localState()` under `ALCHEMY_DEV`, which
+covers both `vp test` and `alchemy dev`. The branch is not optional: a stack's own `state:` wins
+over anything `Test.make` passes, so an unconditional `Cloudflare.state()` fails every test with
+`AuthError` before the first one runs — confirmed by running it. This is the part of §7's subject
+the original document did not anticipate, because it read the state store as a choice about
+durability rather than as one that reaches into the test path.
+
+**`@effect/platform-bun` was dropped, not catalogued.** It is an _optional_ peer of `alchemy`, and
+Alchemy's `Util/PlatformServices.ts` only reaches for it behind `typeof Bun !== "undefined"`. This
+repo runs Node (`engines.node >= 22.18.0`), so on every path we take it is the branch that never
+runs. `@effect/platform-node` stays, and needs a `fallow.toml` `ignoreDependencies` entry because
+its only import is dynamic.
+
+**Phase 2 — the core stack.** ✅ `packages/core/alchemy.run.ts`, `src/Stack.ts`, and `src/d1.ts`.
+`core`'s thirteen tests still run against `node:sqlite`, unchanged, and still pass — which is the
+evidence the migration did not touch pure logic.
+
+Two things came out differently from §2's file table, and both are corrections to this document
+rather than to the code:
+
+- **`src/database.ts` was already taken.** It holds the `Database` capability service, and §2
+  assigned the same path to the D1 resource. The resource is declared inline in `alchemy.run.ts`
+  instead, which is better: that module is plan-time only, so it is free to resolve
+  `migrationsDir` from `import.meta.url` and be independent of the deploy's working directory. A
+  module a Worker bundles could not.
+- **`CoreStack` uses the reference form, not the class form.** `class S extends Stack<S>()(name,
+options, effect) {}` type-checks and dies at runtime with `Fiber.runLoop: Not a valid effect:
+undefined` — only the reference form is piped through Alchemy's `effectClass`. `src/Stack.ts`
+  declares `Stack<CoreStack, CoreStackShape>()("feelsie-core")` and `alchemy.run.ts` calls
+  `.make(options, effect)` on it. This is a beta-72 types-vs-implementation mismatch; see risk 1.
 
 **Phase 3 — the check-in Worker (A002).** `Cloudflare.Worker` with `Cloudflare.Workers.cron`,
 `Cloudflare.Email.SendEmail` for the send binding, `Cloudflare.Email.Routing` / `Address` / `Rule`
 for the inbound side. Witnesses per the rewritten A002.
+
+**Phase 3 carries a debt from Phase 2: `src/d1.ts` has no test.** `core`'s thirteen tests exercise
+the `node:sqlite` implementation of `Database` and none of them touch the D1 one, so nothing yet
+proves the two agree. That gap is where the interesting failures live — it is the module that
+turns defects into `DatabaseError`, `null` into `Option.none`, and a `batch` call into the
+transaction `DatabaseShape` promises.
+
+The fix is a **contract test**: one set of assertions about `DatabaseShape`, run against both
+implementations. It cannot land before Phase 3 because the D1 side needs a Worker —
+`QueryDatabaseBinding` only exists inside one, and `QueryDatabaseLocal` is not an alternative
+(it boots an ephemeral workerd per query and is documented for deploy-time Actions, not suites).
+
+**Converting the existing thirteen to D1 is the wrong move and should stay rejected.** They are
+claims about token shape, local-date arithmetic, expiry, and upsert semantics — D1 is SQLite, so
+running them through an emulator would answer no additional question while making them need one
+forever. That is the mistake `.scratch/amendments/README.md` describes under "Why 001 is not
+'the Worker'".
 
 **Phase 4 — the dashboard (A003).** `Cloudflare.Website.SvelteKit("Website")` with
 `Cloudflare.InferEnv<typeof Website>` typing `App.Platform["env"]`, plus
@@ -111,16 +162,52 @@ for the inbound side. Witnesses per the rewritten A002.
 `ReadBucket` in the restore test — the least-privilege split D1 lacks, R2 has, and it lands
 exactly where A004's claim needs it.
 
+## 4a. Operator tasks, and what is already done
+
+Not phases — one-time account setup that no amendment covers and no test can attest, because none
+of it is rederivable from a checkout.
+
+| #   | Task                             | State                                     |
+| --- | -------------------------------- | ----------------------------------------- |
+| O1  | `alchemy login` for Cloudflare   | **done** — `default` profile, OAuth       |
+| O2  | Bootstrap the shared state store | **done** — `alchemy cloudflare bootstrap` |
+| O3  | First deploy of the Core Stack   | open                                      |
+| O4  | CI credentials                   | open — deferred until CI deploys          |
+
+**O2 on each additional machine.** `alchemy cloudflare bootstrap` is idempotent: without `--force`
+it adopts the existing state-store Worker and only refreshes local credentials. That is the whole
+second-machine setup — run `alchemy login`, then bootstrap, and the shared state is visible.
+
+**O3.** `vp exec -F @feelsie/core alchemy deploy --stage prod`, from the workspace root. Add
+`--dry-run` first to read the plan. Omitting `--stage` deploys to `dev_$USER` instead, which is a
+different database and usually not what is wanted for the first one.
+
+**O4 — deferred, and here is what it needs when it is not.** Nothing blocks on this until CI
+deploys to prod; local deploys use the OAuth profile from O1.
+
+- Mint a token: `vp exec alchemy cloudflare create-token`, which prompts for the account to scope
+  to. `--all-permissions` exists and should stay unused.
+- Set `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN` as CI secrets.
+- **Invoke the bare `alchemy` CLI in CI, never `vp run`.** `vp run` forwards an allowlist that does
+  not include `CLOUDFLARE_*`, so a deploy through it loses both secrets and fails with
+  `Missing required env`. `vp exec -F` is the form that works.
+- **Unverified, and the first thing to check when it fails:** whether a default-scope token from
+  `create-token` covers the state-store Worker and the Secrets Store as well as D1. The state store
+  is account-level infrastructure that a D1-shaped token has no reason to reach. Read the token's
+  grants rather than reaching for `--all-permissions`.
+- The field notes say CI maps pull requests to `pr-{number}` and `main` to `prod`. That mapping is
+  a claim about Alchemy's CI integration and has not been tested here.
+
 ## 5. What this does to the amendments
 
-| Amendment      | Effect of the migration                                                                          |
-| -------------- | ------------------------------------------------------------------------------------------------ |
-| A001 (enacted) | none — pure logic over an unchanged service                                                      |
-| A005 (enacted) | none                                                                                             |
-| A002           | witnesses unchanged; the miniflare `--local` note becomes `Test.make({ dev: true })`, pending §7 |
-| A003           | one witness rises a rung; the rest unchanged                                                     |
-| A004           | improved — R2's read/write split gives the restore leg a read-only handle                        |
-| A006           | becomes writable at all                                                                          |
+| Amendment      | Effect of the migration                                                                               |
+| -------------- | ----------------------------------------------------------------------------------------------------- |
+| A001 (enacted) | none — pure logic over an unchanged service                                                           |
+| A005 (enacted) | none                                                                                                  |
+| A002           | witnesses unchanged; the miniflare `--local` note becomes `Test.make({ dev: true })` — §7 confirms it |
+| A003           | one witness rises a rung; the rest unchanged                                                          |
+| A004           | improved — R2's read/write split gives the restore leg a read-only handle                             |
+| A006           | becomes writable at all                                                                               |
 
 **The A003 witness that rises.** The rewritten amendment names _a test that parses
 `apps/dashboard/wrangler.jsonc` and asserts the declared binding set_ — kind 2 against untyped
@@ -172,7 +259,20 @@ remains monitoring, and nothing here detects it.
 
 ## 7. The spike, and the risks
 
-**The spike: does a test run need Cloudflare credentials?**
+**The spike: does a test run need Cloudflare credentials?** · **answered: yes, and it never uses
+them**
+
+> A dev-mode run never contacts Cloudflare — D1 emulated, Worker in workerd, `dev:`-prefixed ids,
+> filesystem state. But `Cloudflare.providers()` resolves credentials eagerly, before it can know
+> that, so a checkout with no account fails at layer construction and the test file never runs.
+> Placeholder credentials satisfy the resolver and nothing ever authenticates with them, which is
+> what `vite.config.ts`'s `test.env` block supplies to every test in the repository. The full write-up,
+> including the three failures on the way, is in
+> [`prototypes/alchemy-credentials-spike/README.md`](../prototypes/alchemy-credentials-spike/README.md).
+>
+> The paragraphs below are the question as it stood. They are kept because the guess in the last
+> one was half right — the filesystem state store was never the obstacle, and the obstacle was not
+> the state store at all.
 
 Two pages disagree. `/testing` says _Alchemy tests run against real clouds — no mocks, no
 emulators_, and every sample passes `state: Cloudflare.state()`, which the state-store page says
@@ -202,9 +302,9 @@ either passes or it does not.
 3. **Version alignment.** `@effect/platform-node` and `@effect/platform-bun` must match
    `effect@4.0.0-rc.110` exactly and must not drag a second Effect into the tree. Catalog pins,
    same as `@effect/tsgo` and `oxlint-tsgolint` got in F13.
-4. **MX records are unverified.** `Cloudflare.DNS.Record` takes a `type`, and the docs show only
-   `A` and `CNAME`. F2 depends on MX being declarable. Cheap to check, and it only blocks the
-   second row of A006's table.
+4. ~~**MX records are unverified.**~~ **Checked and cleared.** `Cloudflare/DNS/Record.ts` lists
+   `"MX"` in its record-type union and carries a `priority` field documented as "required for `MX`
+   and `URI` records". The second row of A006's table is declarable.
 
 ---
 

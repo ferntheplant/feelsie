@@ -8,6 +8,9 @@ export {
   readEntry,
   senderAddress,
 } from "./core.ts";
+export { CoreStack } from "./Stack.ts";
+export type { CoreStackShape } from "./Stack.ts";
+export { layer as d1Layer } from "./d1.ts";
 export { Database } from "./database.ts";
 export type { DatabaseShape, SqlParameter, SqlRow, SqlStatement } from "./database.ts";
 export {

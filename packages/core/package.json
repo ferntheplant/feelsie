@@ -22,6 +22,7 @@
     "test": "vp test run --reporter=minimal"
   },
   "dependencies": {
+    "alchemy": "catalog:",
     "effect": "catalog:"
   },
   "devDependencies": {

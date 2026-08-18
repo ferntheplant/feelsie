@@ -41,6 +41,7 @@ the running account in [`.scratch/FOG-LOG.md`](./.scratch/FOG-LOG.md).
 | Why something broken isn't              | [`docs/gotchas.md`](./docs/gotchas.md) |
 | How to perform a one-time setup by hand | [`docs/runbooks/`](./docs/runbooks/)   |
 | What is undecided, and what gets built  | [`.scratch/`](./.scratch/)             |
+| What a spike ran, and what it found     | [`prototypes/`](./prototypes/)         |
 
 New writing goes to one of those homes from the start, and **nothing lives in two of them**.
 
@@ -74,6 +75,86 @@ Everything proposed lives in `.scratch/`: `fog.md` for what cannot be stated as 
   [`docs/rationale/core-is-written-in-effect.md`](./docs/rationale/core-is-written-in-effect.md).
   The Effect-native patterns come from [`Effect-TS/skills`](https://github.com/Effect-TS/skills)
   and the type-aware linter in [`Effect-TS/tsgo`](https://github.com/Effect-TS/tsgo).
+- **Infrastructure is declared in `alchemy.run.ts`, never in `wrangler.jsonc`.** Every
+  Cloudflare resource this project uses is a TypeScript value inside the repository. There is
+  no second place to look, and no `wrangler.jsonc` to drift from.
+
+## Infrastructure is declared, and only the declaration is claimable
+
+Three rules, and the third is the one that gets broken by accident:
+
+- **A claim's subject is what the repository declares, never what the account contains.** F10
+  settled that a claim about live infrastructure does not belong in the catalog, and adopting
+  Alchemy refines it rather than reopening it: there is now a declaration to make a claim
+  about. Drift between the declaration and the account is monitoring, and nothing here detects
+  it.
+- **State files are never a witness subject.** `.alchemy/` is gitignored. It describes an
+  account at a moment; a witness that reads it is attesting to a machine, not to a checkout.
+- **A resource that cannot be emulated locally is claimed by what the repository declares.**
+  Workers, D1, R2, KV, Queues, and the email bindings run locally under `dev`. Access
+  applications, zones, and DNS records do not — during `alchemy dev` they deploy for real into
+  your personal stage. A test that touches one is not a witness.
+
+**No test ever holds a real Cloudflare credential.** The `test.env` block in
+[`vite.config.ts`](./vite.config.ts) assigns placeholders — an all-zero account id, a nonsense
+token, `CI=1`, `ALCHEMY_DEV=1` — to `process.env` before any test runs, overriding whatever the
+developer's shell and `~/.alchemy/` hold. Alchemy resolves Cloudflare credentials eagerly, before
+it knows a stack is fully emulated, so a checkout with no account cannot even build the provider
+layer; it never _uses_ them in dev mode. That is what keeps `vp run ready` passing from a clean
+checkout, and being non-functional is the point: a test that escapes dev mode fails to
+authenticate instead of quietly deploying to a real account. `CI=1` matters as much as the
+credentials — it forces the environment-variable path, so a developer who has run `alchemy login`
+gets the same run as CI rather than a quietly different one. The evidence is
+[`prototypes/alchemy-credentials-spike/`](./prototypes/alchemy-credentials-spike/).
+
+**A profile cannot do this job.** Alchemy's profiles live at `~/.alchemy/profiles.json` with
+secrets under `~/.alchemy/credentials/`, and that root is `os.homedir()` with no repository-local
+override. A "dev profile with fake credentials" is a per-machine setup step, which is the one
+thing a clean checkout cannot have.
+
+**A stack picks its state store on `ALCHEMY_DEV`, and never unconditionally.** State records which
+resources already exist, so it has to outlive the machine that made them: two laptops and a CI
+runner are three empty `.alchemy/` directories, and an empty state store does not mean "nothing
+exists", it means "create everything". Real deploys use `Cloudflare.state()`, the shared
+Durable-Object store; tests and `alchemy dev` must not. Every `alchemy.run.ts` branches:
+
+```ts
+const state = Layer.orDie(Layer.unwrap(Effect.map(ALCHEMY_DEV, (dev) => (dev ? localState() : Cloudflare.state()))));
+```
+
+Declaring `Cloudflare.state()` unconditionally type-checks and breaks every test. The stack's own
+`state:` wins over anything `Test.make` passes — `evalStack` provides `stack.services`, which
+already carries the layer — so the failure is an `AuthError` before the first test runs.
+
+**Deploys run from the workspace root, with `vp exec -F`, never `vp run`.**
+
+```
+vp exec -F @feelsie/core alchemy deploy --stage prod
+```
+
+`vp run` forwards only an allowlist — `HOME`, `USER`, `PATH`, `SHELL`, `LANG`, `TZ`,
+`NODE_OPTIONS`, `CI`, `VERCEL_*`, `NEXT_*` — and `CLOUDFLARE_*` is not on it, so a deploy through
+`vp run` silently loses the credentials CI supplies. `vp exec` passes the environment through, and
+`-F` sets the working directory to the package without anyone having to `cd`. A Vite Task cannot
+fix this: `cache: false` and `untrackedEnv` are mutually exclusive in the task type, and a deploy
+may be neither cached nor starved of credentials.
+
+**The working directory is not cosmetic.** `alchemy.run.ts` is resolved against it, and so is
+`localState()`'s `.alchemy/` — deploying one stack from two directories gives it two local state
+stores that disagree about what exists. `-F` makes the directory a property of the command rather
+than of the shell. `migrationsDir` is deliberately immune: `alchemy.run.ts` resolves it from
+`import.meta.url`, so it does not care where the deploy was launched.
+
+**Omitting `--stage` is a decision, not a default.** It means `dev_$USER` — a personal stage with
+its own database. Production is `--stage prod`.
+
+Two mechanical traps, both found the expensive way:
+
+- **A module a Worker bundles may not compute paths from `import.meta.url`.** It is evaluated
+  at cold start inside workerd, which dies with `Invalid URL string`. Plan-time-only modules
+  like `alchemy.run.ts` are free to.
+- **`main: import.meta.url` reads the module's `default` export.** A Worker exported by name
+  bundles to `"default" is not exported`, at deploy time rather than at type-check time.
 
 ## Definition of done
 

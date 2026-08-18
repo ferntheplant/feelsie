@@ -38,6 +38,7 @@ Entries are in the order they were found, not in numerical order. The index is t
 | C20 | §4.1's boundary is set by tooling, not by principle         | `settled`  | crux §4.1, §5.2  |
 | C21 | no artifact exists for work that changes the witness supply | `repeated` | crux §7, §13     |
 | C22 | an amendment has no vintage                                 | `watch`    | —                |
+| C23 | a tool can be capable of an offline witness and refuse one  | `watch`    | crux §4.1, §5.2  |
 
 ---
 
@@ -737,3 +738,45 @@ reported and not an error.
 **Deliberately filed low.** The operator's ruling, and it is the right one: an underspecified
 framework moving under an unenacted artifact is expected rather than defective, and this stops
 mattering the moment crux stabilises. Recorded so the observation is not lost, not as a request.
+
+---
+
+## C23 — A tool can be capable of an offline witness and still refuse to run one · `watch`
+
+C20 established that §4.1's boundary is set by tooling rather than by principle. This is the same
+boundary being moved by something narrower than capability, and it is worth separating because the
+remedy is different.
+
+Adopting Alchemy was supposed to make local emulation the witness path for A002 and A004: D1, R2,
+KV, Queues and the email bindings all run in workerd inside the test process, and every resource
+id comes back `dev:`-prefixed as proof no cloud call was made. That capability is real, and the
+spike confirmed it end to end — a Worker served a request that wrote and read an emulated database
+in under four seconds.
+
+**It still refused to run without a Cloudflare credential.** `Cloudflare.providers()` resolves
+credentials when the layer is built, which is before it knows that every resource in the stack
+will be emulated. On a checkout with no `~/.alchemy/` and no environment variables, the failure is
+`AuthError` at layer construction and the test file never executes.
+
+So the claim was not blocked by what the tool _could_ attest. It was blocked by the order in which
+the tool asked for things. A witness that is fully rederivable from a checkout was one eager
+dependency away from not existing, and nothing about the capability would have told you.
+
+**The remedy is not the same as C20's.** C20's answer was to wait for better tooling — an
+imperative deploy script genuinely cannot be read for its resulting state, and no amount of
+arrangement fixes that. Here the answer was four lines of environment: force the tool's
+non-interactive path and hand it placeholders, which it validates for shape and never uses.
+Non-functional placeholders are also the safer configuration, because a test that escapes local
+mode now fails to authenticate rather than deploying into a real account.
+
+**Why this is filed as a finding and not as a build note.** The judgment it required is the
+interesting part, and it is a judgment crux has no vocabulary for: _is a witness that needs a
+syntactically-valid credential it never authenticates with still rederivable from a checkout?_ The
+answer here is yes, and the reason is that the credential is not an input to the attestation —
+nothing the witness observes depends on its value. But that argument had to be made by a person,
+against a tool that offered no way to distinguish "required" from "used". A framework that ranks
+witnesses by what they depend on should be able to say that a dependency which cannot affect the
+verdict is not a dependency.
+
+**Filed `watch`.** One occurrence, in one tool, on one provider. It becomes evidence if a second
+tool moves the same boundary for the same reason.
