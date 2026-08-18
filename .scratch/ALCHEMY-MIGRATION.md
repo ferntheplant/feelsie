@@ -9,7 +9,9 @@
 > [`prototypes/cross-stack-d1-spike/`](../prototypes/cross-stack-d1-spike/) and the correction
 > in §2. Phases 3–6 are the amendments
 > A002, A003, A004, and A006, and each is gated by something this document does not control —
-> F1 and F7 are still open fog, and reopening F10 for A006 is an operator's call.
+> F7 is still open fog, and reopening F10 for A006 is an operator's call. **F1 has cleared** —
+> [`prototypes/cron-send-email-spike/`](../prototypes/cron-send-email-spike/) settled that one
+> Worker holds both a cron trigger and a send binding, so Phase 3's shape stands.
 
 Alchemy becomes the house IaC: every Cloudflare resource this project uses is declared in
 TypeScript, as an Effect, inside the repository. `wrangler.jsonc` never gets written.
@@ -168,6 +170,13 @@ undefined` — only the reference form is piped through Alchemy's `effectClass`.
 **Phase 3 — the check-in Worker (A002).** `Cloudflare.Worker` with `Cloudflare.Workers.cron`,
 `Cloudflare.Email.SendEmail` for the send binding, `Cloudflare.Email.Routing` / `Address` / `Rule`
 for the inbound side. Witnesses per the rewritten A002.
+
+**F1 cleared against this phase and confirmed its shape.** One Worker holds both the cron trigger
+and the send binding; the send executes from the scheduled handler and the binding's pinned
+destination is enforced there. What the spike also found is that `CronEventSourceLive` swallows
+the handler's failure, so a refused send reports a successful invocation — which added a claim to
+A002 and re-cut two of its witness sets. `Cloudflare.Email.SendEmail` is a Worker-only binding
+that declares no cloud-side resource, so none of that needed an account.
 
 **Phase 3 carries a debt from Phase 2: `src/d1.ts` has no test.** `core`'s thirteen tests exercise
 the `node:sqlite` implementation of `Database` and none of them touch the D1 one, so nothing yet
@@ -339,7 +348,10 @@ either passes or it does not.
    is installed whether or not anything declares it. One `effect` in the lockfile, checked.
 4. ~~**MX records are unverified.**~~ **Checked and cleared.** `Cloudflare/DNS/Record.ts` lists
    `"MX"` in its record-type union and carries a `priority` field documented as "required for `MX`
-   and `URI` records". The second row of A006's table is declarable.
+   and `URI` records". The second row of A006's table is declarable. A006 carried the opposite
+   claim for two revisions and has been corrected against this. Re-reading it added one thing:
+   `priority` is typed **optional** despite being required for MX, so the omission fails at the
+   API rather than at `vp check` — which A006 now closes with a type witness.
 
 ---
 

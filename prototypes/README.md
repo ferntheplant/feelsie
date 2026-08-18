@@ -23,3 +23,4 @@ survives even after the code stops building.
 | ----------------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------- |
 | [`alchemy-credentials-spike`](./alchemy-credentials-spike/) | Does an Alchemy test run need Cloudflare credentials? | required, never used — see its README                    |
 | [`cross-stack-d1-spike`](./cross-stack-d1-spike/)           | Can a Worker bind a D1 database another stack owns?   | yes, through `Resource.ref` — not through a stack output |
+| [`cron-send-email-spike`](./cron-send-email-spike/)         | Does `send_email` work inside a `scheduled` handler?  | yes — and a send that fails there is silent              |

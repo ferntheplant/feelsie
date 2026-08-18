@@ -4,7 +4,7 @@ An amendment is the set of claim changes that one unit of work proposes. It is t
 specification. Its operations are **add**, **change**, and **delete**; every entry names a
 claim, and an add also names the witness that will attest it.
 
-An amendment is enacted by the merge. **001 and 005 are enacted; 002, 003, 004, and 006 are
+An amendment is enacted by the merge. **001 and 005 are enacted; 002, 003, 004, 006, and 007 are
 proposed.**
 
 ## Sequence
@@ -13,10 +13,11 @@ proposed.**
 | ------------------------------------------- | ------------------------------ | ------------------------------------------ | -------- |
 | [001](./001-the-core.md)                    | config, tokens, dates, entries | `packages/core`                            | —        |
 | [005](./005-the-altitude-correction.md)     | six claims become two          | `packages/core`                            | —        |
-| [002](./002-the-checkin-worker.md)          | cron, form, mail               | `apps/checkin`                             | 001, F1  |
+| [002](./002-the-checkin-worker.md)          | cron, form, mail               | `apps/checkin`                             | 001      |
 | [003](./003-the-dashboard.md)               | history and statistics         | `apps/dashboard`                           | 001, F7  |
 | [004](./004-the-backup.md)                  | D1 → R2                        | `apps/checkin`                             | 002      |
 | [006](./006-the-declared-infrastructure.md) | Access, DNS, mail, rate limit  | the root, `apps/checkin`, `apps/dashboard` | Alchemy  |
+| [007](./007-the-house-rules.md)             | the house rules, as claims     | the root                                   | —        |
 
 **There is one project and the column does not name it.** Every claim in the repository carries
 the `root/` prefix — see [`ONE-PROJECT.md`](../ONE-PROJECT.md). What differs between amendments is
@@ -47,8 +48,12 @@ writes through `INSERT … RETURNING`. Closing that means `core` exposes narrow 
 instead of one `Database`. **That seam carries no claim**, so it belongs to no amendment; it
 lands in whichever of 002 and 003 merges first, and the other inherits it.
 
-**004 has not been revised.** It is the one amendment still written under the retracted rule, and
-its claim leads with the R2 write where its own prose says the restore leg is the claim.
+**004 has now been revised too.** It was the last amendment written under the retracted rule, and
+it carried the fingerprint in the worst place: its claim led with the R2 write while its own prose
+said the restore leg was the claim. The claim now leads with the restore and says _exactly_ rather
+than _containing_, the witness set uses R2's read/write split, and F1's silence finding added a
+second claim. `wrangler dev --local` is gone from its witnesses along with everything else that
+named a tool this repository does not have.
 
 ## Why 001 is not "the Worker"
 
@@ -96,11 +101,15 @@ expect.** C11 predicted the root would hold mostly development-kind claims and w
 that a correlation rather than an identity. The first claim about the repository itself is the
 exception, not the rule it predicted.
 
-The repository's house rules are all `@kind development` claims waiting to be written, and F11
-settled what they will be: Effect-native patterns, carried by the Effect linter's rule ids. They
-are still deferred, but the reason changed — it is sequencing now, not doubt. F13 confirmed the
-lint path and turned on `effecttsgo/floating-effect` as its probe.
+## The house rules stopped being deferred
 
-One is already identifiable and is not an Effect rule: the type-aware lint pipeline must be
-available. Its compatibility-sensitive packages now have exact catalog pins. See
-[C15](../CRUX-FEEDBACK.md).
+They were `@kind development` claims "waiting to be written" for three revisions of this file, on
+a reason that kept shrinking: F11 settled what they would be (Effect-native patterns, carried by
+the Effect linter's rule ids), F13 confirmed the lint path end to end, and C15 established that
+each rule is a witness for the cost of one comment. What was left was sequencing.
+
+[007](./007-the-house-rules.md) is them, and **it is the only amendment in this table with no
+gate.** Every other one waits on A002, A003, or an Alchemy phase; this one waits on nothing, and
+three of its four witnesses are lint rules that are already enabled and already denying. C15's
+fourth claim — the type-aware pipeline is available — is in it, and is the only part that needs
+new code.

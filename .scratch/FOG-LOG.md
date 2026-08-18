@@ -514,3 +514,82 @@ the witness is in.
 glossary — and `CRUX.md` already says a package glossary holds no words and that the root one is
 the only one. An empty file that exists only to say it is empty is the kind of artifact a hand-run
 process leaves behind and a tool never would.
+
+---
+
+## 2026-08-18 — clearing F1, and three documents that had gone stale
+
+One spike, one fog item cleared, one amendment rewritten, one contradiction resolved, and one
+amendment written that had been "deferred" for three revisions.
+
+### Clerical — candidates for cairn
+
+**Re-deriving what a fog item blocks.** F1 said "blocks A002". Working out what in A002 it blocked
+meant reading five claims and their witness sets to find the two sentences that would change. The
+fog item knew the amendment; it did not know which claims, and it is the claims that move. That is
+a join, it is **C4** again, and it is the fourth occurrence.
+
+**Propagating one cleared item to four files.** `fog.md` (move the entry, edit the index table),
+`amendments/002` (the gate line and the blocked-on paragraph), `amendments/README.md` (the `Gated
+by` column), `ALCHEMY-MIGRATION.md` (the status banner and Phase 3). None of it is judgment and
+all of it is invisible if forgotten — a stale "Blocked on F1" reads exactly like a live one.
+
+**Checking one fact against two documents that disagreed.** A006 said MX support was unverified;
+`ALCHEMY-MIGRATION.md` risk 4 said checked and cleared. Both had been true when written, and
+nothing points one at the other. Settling it took one `grep` of `Cloudflare/DNS/Record.ts`, which
+is cheaper than the reading that produced the disagreement — the same shape F12 recorded, where an
+"evidence" item was answerable without running anything.
+
+### Thinking — never automate
+
+**Deciding that F1 had cleared when its residual had not.** The spike proves the send executes
+from a scheduled handler in workerd against a Miniflare-equivalent simulator. It does not prove
+Cloudflare's production Email service accepts one. The judgment is that no reading of the evidence
+leaves the _shape_ in doubt, so what remains is a deployment verification rather than a design
+question — and a fog item exists to hold design questions. Getting this wrong in the cautious
+direction is not free: A002 would stay blocked on a check nobody can run until the thing A002
+builds exists.
+
+**Asking what happens when the dependency's error path runs.** The spike's second schedule exists
+because somebody asked a question F1 did not: not "does the send work" but "what does Alchemy do
+when it doesn't". That found the swallow, which changed A002's witnesses and added two claims
+across A002 and A004. Crux's adversarial rules point at your own code; this one pointed at the
+framework. **C26.**
+
+**Deciding where the send is counted.** "One prompt, one send" is a sentence whose meaning depends
+entirely on where the observation happens, and both readings look identical on the page. At the
+invocation it passes with zero sends; at the binding it means what it says. No form check reaches
+this, and no reading of the claim alone reaches it either — it took knowing the swallow existed.
+
+**Grouping fifteen lint rules into four claims, and refusing to claim nine of them.** A007's whole
+difficulty. One claim per rule is the A005 altitude error rebuilt from scratch, and the
+discriminator took a while to find: a rule earns a claim when the code it forbids produces a
+failure somebody notices at runtime or on a release; a rule that only tidies the diff does not.
+Nine enabled rules are deliberately unclaimed on that basis.
+
+**Noticing that A007's fourth claim has no home in the model.** Three of its claims are witnessed
+by lint rules; the fourth is a claim _about those rules still working_. Test 4 forbids a claim that
+describes its own witness and says nothing about one that describes another claim's. Three readings
+fit, the awkward one is that it may be a **standing** rather than a claim, and this repository
+cannot pick. **C27** — and it will not be rare, because any project whose witnesses come from a
+supply has one per supply.
+
+### Framework friction
+
+**A rewritten amendment has no record that it was rewritten.** A004 is on its third version. The
+only way to know is that the file says so in prose, because somebody remembered to write it. This
+is **C22** (an amendment has no vintage) meeting **C21** (no artifact for work that changes the
+witness supply) — the rewrite was driven by a spike that changed what could be witnessed, and
+neither the amendment nor the catalog records the connection except by hand.
+
+**The most valuable output of the session is in `prototypes/`, which `docs/` may not point at.**
+The swallow finding changed two amendments and added two claims. Its evidence is a spike README,
+correctly outside the catalog, and the amendments reach it by relative link. That is the right
+arrangement and it means the finding's home is the least durable directory in the repository.
+
+### Re-derived at session start
+
+That `Cloudflare.D1.ExportDatabase` is an account-API operation and not reachable from a Worker,
+which A004 assumed the opposite of by omission. The backup handler has to serialise rows through
+the `QueryDatabase` binding. This made the claim better — the export format is repository code
+rather than a vendor endpoint, so the round trip is judgeable from a checkout.

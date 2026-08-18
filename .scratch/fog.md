@@ -14,26 +14,11 @@ clear when you can write the claim **and** assign its witness.
 
 | #         | Item                                                  | Clears by | Blocks                       |
 | --------- | ----------------------------------------------------- | --------- | ---------------------------- |
-| [F1](#f1) | Does `send_email` work in a `scheduled` handler?      | evidence  | A002                         |
 | [F2](#f2) | Can a subdomain be onboarded with the apex MX intact? | evidence  | the runbook, the real domain |
 | [F3](#f3) | Does the daily mail land in the inbox?                | evidence  | nothing structural           |
 | [F7](#f7) | Line charts, or a calendar heat map?                  | judgment  | statistics in A003           |
 
 ---
-
-### F1
-
-**Does `send_email` work inside a `scheduled` handler?** · evidence · blocks A002
-
-The whole check-in Worker rests on one Worker holding both a cron trigger and a send binding. If
-that does not work, the shape changes.
-
-Deploy a throwaway Worker with `*/2 * * * *` and a single send. Watch the sending metrics, not
-the Email Routing summary ([`docs/gotchas.md`](../docs/gotchas.md)).
-
-Known correction if it fails: the `scheduled` handler calls a `fetch` route on the same Worker
-and the send happens there. Worth knowing before it is needed, because it changes what
-`checkin/prompt/one-per-local-date` is a claim _about_.
 
 ### F2
 
@@ -64,6 +49,41 @@ claim about a heat map and a claim about a line chart are not the same claim.
 ---
 
 ## Cleared
+
+### F1 — Does `send_email` work inside a `scheduled` handler? · cleared by evidence
+
+**Yes, and A002's shape does not change.** The correction this item was holding in reserve — move
+the send to a `fetch` route the `scheduled` handler calls — is not needed and should not be built.
+
+[`prototypes/cron-send-email-spike/`](../prototypes/cron-send-email-spike/) is the run. Three
+things were separable and only the third changed anything:
+
+1. **The arrangement is typed, not merely permitted.** A send requires `RuntimeContext`;
+   `Workers.cron` requires `Exclude<Req, RuntimeContext>` of its handler, so the event source
+   discharges it. Answered by `vp check`, with no run at all.
+2. **The send executes from a scheduled fire**, and the binding's pinned destination is enforced
+   there exactly as on a request. The emulator writes the body to disk and logs the path.
+3. **A send that fails inside a scheduled handler is invisible**, and this is the finding.
+
+**The third one is why clearing this item was worth more than the answer.** `CronEventSourceLive`
+wraps every handler in `Effect.catchCause(() => Effect.void)`, so a refused send returns
+`{"outcome":"ok"}` — Cloudflare never observes a failed invocation, its retry never engages, and
+`controller.noRetry()` is moot. The daily mail can stop going out with every platform signal
+reading normal, and the one metric that would have moved is the one
+[`docs/gotchas.md`](../docs/gotchas.md) already says not to trust.
+
+So a witness that observes the **invocation** attests nothing about the send. A002's send claims
+need a witness that observes the **send**, and the handler has to make its own failure visible
+because the event source will not. That is a change to the witness side of A002, not to its
+claims. Recorded as [C26](./CRUX-FEEDBACK.md).
+
+**What is left, and why it does not block.** The local simulator is Miniflare-equivalent
+validation, not Cloudflare's Email service, so "the production service accepts a send from a
+scheduled invocation" is still unobserved. Nothing suggests a restriction — the binding hangs off
+`env`, which every handler receives, and Cloudflare's API reference documents `env.EMAIL.send()`
+with no handler constraint. That residual is a **deployment verification** folded into O3, not a
+design question: there is no reading of the evidence under which the shape changes, which is the
+test this item existed to apply.
 
 ### F13 — Does Effect's Oxlint patch compose with Vite+'s bridge? · cleared by evidence
 
