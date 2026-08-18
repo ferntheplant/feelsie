@@ -17,7 +17,10 @@ export interface TestDatabase {
   readonly service: DatabaseShape;
 }
 
-export const makeTestDatabase = (): TestDatabase => {
+// Not exported: `withTestDatabase` is the only way in, because it is the one that closes
+// the handle. An exported constructor is an invitation to open a database a test never
+// releases, and `node:sqlite` will not tell you that you did.
+const makeTestDatabase = (): TestDatabase => {
   const raw = new DatabaseSync(":memory:");
   raw.exec(migration);
 
