@@ -1,12 +1,19 @@
 import { assert, it, vi } from "@effect/vitest";
 import { Effect } from "effect";
 
-import { generateToken } from "#core";
+import { configLayer, createPrompt, generateToken } from "#core";
+
+import { withTestDatabase } from "./test-support/sqlite.ts";
 
 const base64UrlPattern = /^[A-Za-z0-9_-]{43}$/;
+const environment = {
+  MAIL_DOMAIN: "mail.example.com",
+  SEND_HOUR: "21",
+  TZ: "America/New_York",
+};
 
-// @attests core/token/uses-web-crypto
-it.effect("gets token bytes from Web Crypto", () => {
+// @attests core/token/cannot-be-guessed
+it.effect("stores token bytes from Web Crypto", () => {
   const getRandomValues = vi
     .spyOn(globalThis.crypto, "getRandomValues")
     .mockImplementation(<T extends ArrayBufferView | null>(array: T): T => {
@@ -16,17 +23,21 @@ it.effect("gets token bytes from Web Crypto", () => {
       array.set(Array.from({ length: 32 }, (_, index) => index));
       return array;
     });
-  return Effect.gen(function* () {
-    const token = yield* generateToken;
-    assert.strictEqual(getRandomValues.mock.calls.length, 1);
-    const bytes = getRandomValues.mock.calls[0]?.[0];
-    assert.instanceOf(bytes, Uint8Array);
-    assert.strictEqual(bytes.byteLength, 32);
-    assert.strictEqual(token, "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8");
-  }).pipe(Effect.ensuring(Effect.sync(() => getRandomValues.mockRestore())));
+  return withTestDatabase((database) =>
+    Effect.gen(function* () {
+      const prompt = yield* createPrompt;
+      const stored = database.raw.prepare("SELECT token FROM prompts WHERE token = ?").get(prompt.token);
+      assert.strictEqual(getRandomValues.mock.calls.length, 1);
+      const bytes = getRandomValues.mock.calls[0]?.[0];
+      assert.instanceOf(bytes, Uint8Array);
+      assert.strictEqual(bytes.byteLength, 32);
+      assert.strictEqual(prompt.token, "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8");
+      assert.deepEqual(stored, { token: prompt.token });
+    }).pipe(Effect.provide(configLayer(environment))),
+  ).pipe(Effect.ensuring(Effect.sync(() => getRandomValues.mockRestore())));
 });
 
-// @attests core/token/is-32-bytes-base64url
+// @attests core/token/cannot-be-guessed
 it.effect("generates distinct 32-byte base64url tokens", () =>
   Effect.gen(function* () {
     const tokens = yield* Effect.all(Array.from({ length: 1_000 }, () => generateToken));

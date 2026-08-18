@@ -80,7 +80,7 @@ export default defineConfig({
       builtin: true,
     },
     overrides: [
-      // @attests core/token/never-uses-math-random
+      // @attests core/token/cannot-be-guessed
       {
         files: ["packages/core/**"],
         rules: {

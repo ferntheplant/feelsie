@@ -3,10 +3,12 @@
 **Project**: `core` (`packages/core`) · **Status**: proposed · **Gated by**: nothing
 
 A001 shipped fourteen claims. Six of them describe checks rather than promises. This replaces
-those six with two, and **changes no test, no production code, and no migration.**
+those six with two, tightens three test witnesses, and **changes no production code and no
+migration.**
 
-Six markers keep their bodies and their positions. Only the slug in their `@attests` changes. That
-is the whole shape of the finding: **the altitude was wrong and the witnesses were right.**
+Six markers keep their positions. The token shape test and the lint rule keep their bodies. Three
+production-path tests close gaps found during the new coverage audit. The finding still holds:
+**the altitude was wrong, and sound individual witnesses did not settle coverage.**
 
 ## Why
 
@@ -64,21 +66,20 @@ does not start.
 ### `core/token/cannot-be-guessed`
 
 **Kind**: capability
-**Claim**: Nobody can guess a token. Token bytes come from the Web Crypto API, a token is 32 bytes
-encoded as base64url, and no code in `packages/core` calls `Math.random`.
+**Claim**: Nobody can guess a token.
 
 **Witnesses** — three, all already written:
 
 | Marker              | Attests                                                       | Kind |
 | ------------------- | ------------------------------------------------------------- | ---- |
-| `token.test.ts:8`   | the production path calls `getRandomValues`, with known bytes | test |
-| `token.test.ts:29`  | length, alphabet, and a thousand distinct values              | test |
+| `token.test.ts:15`  | the production path calls `getRandomValues`, with known bytes | test |
+| `token.test.ts:40`  | length, alphabet, and a thousand distinct values              | test |
 | `vite.config.ts:83` | `Math.random` is not callable in `packages/core`              | lint |
 
 **Coverage.** The lint rule closes one way to fail and affirms nothing on its own — a hand-written
 weak generator passes it. The Web Crypto test supplies the positive observation, and the shape
 test covers the case where a correct source is truncated or re-encoded. Together they reach the
-claim.
+reader-visible claim without promoting those checks into the catalog.
 
 The lint rule's scope is all of `packages/core` and the claim is about tokens. That is
 over-attribution, which crux permits and under-attribution is what it forbids.
@@ -86,22 +87,23 @@ over-attribution, which crux permits and under-attribution is what it forbids.
 ### `core/config/is-required-and-valid`
 
 **Kind**: capability
-**Claim**: The time zone, send hour, and mail domain are required and validated before use. No
-value has a fallback, an unknown time zone is refused, a send hour outside 0 through 23 is
-refused, and a configured operation cannot run without the configuration.
+**Claim**: Missing or invalid configuration is refused before use. The time zone, send hour, and
+mail domain are required with no fallback. The time zone must be known, the send hour must be an
+integer from 0 through 23, and the mail domain must be non-empty.
 
-**Witnesses** — three, all already written:
+**Witnesses** — three; the two runtime witnesses are tightened by this amendment:
 
-| Marker              | Attests                                                      | Kind              |
-| ------------------- | ------------------------------------------------------------ | ----------------- |
-| `config.test.ts:17` | every configured operation requires `CoreConfig` in its type | test (type-level) |
-| `config.test.ts:26` | each value absent in turn; every operation fails             | test              |
-| `config.test.ts:42` | `-1`, `25`, `1.5`, `noon`, `""`, `Mars/Olympus`              | test              |
+| Marker              | Attests                                                    | Kind              |
+| ------------------- | ---------------------------------------------------------- | ----------------- |
+| `config.test.ts:17` | current configured operations require `CoreConfig` in type | test (type-level) |
+| `config.test.ts:26` | the production layer refuses each absent value in turn     | test              |
+| `config.test.ts:38` | exact hour bounds, malformed values, domain, and time zone | test              |
 
 **Coverage.** The type-level test closes the way to fail where an operation reads configuration
-from module scope and bypasses the layer. The absence test closes `env.TZ ?? "UTC"`, which type
-checks, never throws, and silently moves every local date. The validation test closes a value that
-is present and wrong. No two of the three reach the claim without the third.
+from module scope and bypasses the service. The runtime tests ask through `configLayer`, so they
+cover both strict decoding and the production connection to that decoder. They refuse each missing
+or invalid value and observe both valid hour boundaries. No two of the three reach the claim
+without the third.
 
 ## What stays, and why
 
@@ -135,19 +137,20 @@ writing twice. They stay apart: duplicated rows and a lost correction are differ
    deletion. Leaving them would produce backward dangles — reported and not errors, which is
    exactly why nothing would stop you.
 
-4. Run `vp run ready`.
-5. Audit claim by claim, and set coverage for the two new claims.
+4. Tighten three production-path witnesses at the gaps found by the coverage audit.
+5. Run `vp run ready`.
+6. Audit claim by claim, and set coverage for the two new claims.
 
 The catalog goes from fourteen claims to ten — which is the number the tracker carried before the
 build, reached from the other direction. Read no significance into the coincidence beyond the
 obvious one: fourteen was never a count of promises.
 
-**Nothing under `packages/core/src` changes except the six comment lines.** If this amendment
-grows a test edit, the diagnosis was wrong.
+**Nothing under `packages/core/src` changes outside the six comment lines and three test bodies.**
+The first coverage audit disproved the original no-test-edit constraint.
 
 ## Not claimed
 
-- **That the six markers are the right witnesses.** They were audited under A001 and each was
-  repaired until it attested its claim. This amendment moves the claims, not the instruments, so
-  their standings carry — but the **coverage** of the two new claims is a new question, and no
-  earlier audit answers it.
+- **That prior standings settle the two new claims.** The lint and token shape instruments are
+  unchanged, so their standings carry. The three edited test instruments need new standings. Both
+  witness sets need new coverage because no earlier audit read either set against its combined
+  claim.

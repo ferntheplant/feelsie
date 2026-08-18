@@ -1,5 +1,4 @@
-> @grounds core/config/is-context-service
-> @grounds core/config/is-required
+> @grounds core/config/is-required-and-valid
 
 # The core is written in Effect
 

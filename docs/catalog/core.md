@@ -1,19 +1,9 @@
 # Core Catalog
 
-> @claim core/token/uses-web-crypto
+> @claim core/token/cannot-be-guessed
 > @kind capability
 
-Token generation gets its bytes from the Web Crypto API.
-
-> @claim core/token/never-uses-math-random
-> @kind development
-
-No code in `packages/core` calls `Math.random`.
-
-> @claim core/token/is-32-bytes-base64url
-> @kind capability
-
-A token is 32 bytes encoded as base64url.
+Nobody can guess a token.
 
 > @claim core/token/authorises-one-date
 > @kind capability
@@ -53,22 +43,12 @@ Each measure is an integer from 1 to 10 inclusive.
 
 A second answer for a local date replaces the measures of the first.
 
-> @claim core/config/is-context-service
+> @claim core/config/is-required-and-valid
 > @kind capability
 
-The time zone, send hour, and mail domain form a service in the Effect context. Code that computes
-a local date, schedules a prompt, or builds a sender address requires that service.
-
-> @claim core/config/is-required
-> @kind capability
-
-The time zone, send hour, and mail domain are required runtime configuration. None has a fallback.
-
-> @claim core/config/is-validated
-> @kind capability
-
-The time zone and send hour are validated before use. An unknown time zone or a send hour outside
-0 through 23 is refused.
+Missing or invalid configuration is refused before use. The time zone, send hour, and mail domain
+are required with no fallback. The time zone must be known, the send hour must be an integer from
+0 through 23, and the mail domain must be non-empty.
 
 > @claim core/entry/note-round-trips
 > @kind capability

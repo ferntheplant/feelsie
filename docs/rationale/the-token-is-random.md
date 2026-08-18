@@ -1,6 +1,4 @@
-> @grounds core/token/uses-web-crypto
-> @grounds core/token/never-uses-math-random
-> @grounds core/token/is-32-bytes-base64url
+> @grounds core/token/cannot-be-guessed
 > @grounds core/token/authorises-one-date
 > @grounds core/token/survives-answering
 > @grounds core/prompt/expires-after-seven-days

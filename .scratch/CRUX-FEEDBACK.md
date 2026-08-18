@@ -14,26 +14,27 @@ finding).
 
 Entries are in the order they were found, not in numerical order. The index is the queue.
 
-| #   | Finding                                                     | Status      | Destination      |
-| --- | ----------------------------------------------------------- | ----------- | ---------------- |
-| C1  | a claim's subject must be rederivable from the repository   | `settled`   | crux §5          |
-| C2  | a rationale ships with the claims it grounds                | `settled`   | crux §11.5, §6.6 |
-| C3  | the witness assignment is where the design happens          | `open`      | cairn            |
-| C4  | cairn owns the cross-references                             | `repeated`  | cairn            |
-| C5  | an amendment has nowhere to live before there is a branch   | `settled`   | cairn            |
-| C6  | fog in the target repository pollutes product history       | `settled`   | cairn            |
-| C7  | an exit gate does work an open-questions list cannot        | `settled`   | evidence for §10 |
-| C8  | "claim, or settled by construction?" has no mechanical form | `settled`   | never automate   |
-| C9  | one prose sentence, two claims, two projects                | `watch`     | —                |
-| C10 | a claim needing two witnesses is two claims                 | `retracted` | crux §5.7        |
-| C11 | the root project holds development claims or none           | `watch`     | —                |
-| C12 | the root project is named `root`                            | `settled`   | crux §3.4, §2.2  |
-| C13 | fog can clear without producing anything                    | `watch`     | —                |
-| C14 | a value held outside the repository raises its claim        | `settled`   | crux §5          |
-| C15 | a third-party type-aware linter is a witness supply         | `settled`   | crux §5.2, §6.3  |
-| C16 | a fog item must record what would clear it                  | `repeated`  | cairn            |
-| C17 | markdown directives are invisible in rendered views         | `settled`   | crux §6.3        |
-| C18 | directive names collide with other ecosystems               | `settled`   | crux §6.1, §6.6  |
+| #   | Finding                                                     | Status     | Destination      |
+| --- | ----------------------------------------------------------- | ---------- | ---------------- |
+| C1  | a claim's subject must be rederivable from the repository   | `settled`  | crux §5          |
+| C2  | a rationale ships with the claims it grounds                | `settled`  | crux §11.5, §6.6 |
+| C3  | the witness assignment is where the design happens          | `open`     | cairn            |
+| C4  | cairn owns the cross-references                             | `repeated` | cairn            |
+| C5  | an amendment has nowhere to live before there is a branch   | `settled`  | cairn            |
+| C6  | fog in the target repository pollutes product history       | `settled`  | cairn            |
+| C7  | an exit gate does work an open-questions list cannot        | `settled`  | evidence for §10 |
+| C8  | "claim, or settled by construction?" has no mechanical form | `settled`  | never automate   |
+| C9  | one prose sentence, two claims, two projects                | `watch`    | —                |
+| C10 | claim boundaries follow reader-visible failures             | `settled`  | crux §5.9        |
+| C11 | the root project holds development claims or none           | `watch`    | —                |
+| C12 | the root project is named `root`                            | `settled`  | crux §3.4, §2.2  |
+| C13 | fog can clear without producing anything                    | `watch`    | —                |
+| C14 | a value held outside the repository raises its claim        | `settled`  | crux §5          |
+| C15 | a third-party type-aware linter is a witness supply         | `settled`  | crux §5.2, §6.3  |
+| C16 | a fog item must record what would clear it                  | `repeated` | cairn            |
+| C17 | markdown directives are invisible in rendered views         | `settled`  | crux §6.3        |
+| C18 | directive names collide with other ecosystems               | `settled`  | crux §6.1, §6.6  |
+| C19 | audit coverage before an amendment freezes witness work     | `watch`    | crux §7, §9.2    |
 
 ---
 
@@ -294,38 +295,27 @@ altitudes, neither implying the other, and no honest single witness spanning bot
 A granularity signal. One occurrence; needs a repeat before it says anything about where the
 right altitude is.
 
-## C10 — A claim that needs two witnesses is two claims · `retracted`, then rewritten
+## C10 — Claim boundaries follow reader-visible failures · `settled`
 
-**The original finding was wrong.** It claimed crux had a gap: a claim where neither witness
-alone attests it, which §5.7 does not discuss. Both of its examples fail.
+**The original finding and its first correction were wrong.** The original said that one claim
+can need two witnesses. The first correction said that different witness kinds require separate
+claims.
 
-- `core/token/is-random` — the first split separated the CSPRNG property from output shape.
-  Implementation showed that the CSPRNG half still joined two properties. A Web Crypto test
-  attests the production source. A lint rule attests only that `Math.random` is unreachable. The
-  final split has `token/uses-web-crypto`, `token/never-uses-math-random`, and
-  `token/is-32-bytes-base64url`.
-- `backup/lands-in-r2` — already dissolved by C1 and rewritten to
-  `checkin/backup/writes-a-restorable-export`, witnessed by one local test. The finding was left
-  standing on the deleted version.
+Both versions used instruments to set the claim boundary. That rule split one token promise into
+three checks. It also promoted a configuration type witness into a claim.
 
-**The correct finding is the inverse of what was written**, and it is more useful:
+**The ruling.** Group claims by the failure a reader can see. Do not group them by the check that
+finds the failure.
 
-> **A claim that appears to need two witnesses of different kinds is a claim that should be
-> split — or one whose second half is out of scope.**
+A weak generator, a `Math.random` call, and a short token produce one visible failure. Somebody
+can guess the token. An absent time zone and an unknown time zone also share a visible outcome.
+The system records the wrong local date, or it does not start.
 
-It is the mirror of §5.7. That warns about one marker carrying many claims, and the diagnosis is
-that the claims are coupled. This warns about one claim needing many markers, and the diagnosis
-is that the claim is compound.
+Coverage makes these claims legal. A witness can support part of a claim and remain sound. The
+auditor separately judges whether all witnesses reach the claim.
 
-It held a third time on a claim written later in the same session.
-`core/config/is-required-not-defaulted` first became availability and validation. Implementation
-then split availability again: the type says operations require a context service, while the test
-says absent runtime values fail without a fallback. The final form has three claims.
-
-Three examples covered a compound predicate, an out-of-scope subject, and distinct properties
-sharing a name. The token case needed a second split when implementation tested its witness.
-
-**To port.** A paragraph beside §5.7, since the two are the same observation from opposite ends.
+A005 repairs the catalog that exposed the error. It replaces six check-level claims with two
+reader-visible claims. Crux §5.8 and §5.9 now record the resulting rules.
 
 ## C11 — The root project may hold no claims at all · `watch`
 
@@ -595,3 +585,26 @@ misfiled. The document defining the format currently fails it.
 
 **To port.** §6.1 gains the colon in the name pattern and the `<`/`>`/backtick exclusion; §6.2
 replaces `@end` with the three suffixed closers; §6.6 gains the attribute-mismatch error.
+
+## C19 — Audit coverage before an amendment freezes witness work · `watch`
+
+**Where it came from.** A005 combined six claims into two and kept the existing witnesses. The
+amendment knew that both combined claims needed new coverage judgments.
+
+It still scheduled the coverage audit after the gate. It also stated that any test edit proved
+the diagnosis wrong. The first independent audit found that send hour `24` passed every witness.
+The operator then revised the amendment and permitted witness repairs.
+
+A second audit found two integration gaps. One test observed secure generation but not the stored
+token. Two tests observed strict decoding but not the production layer. Both sets needed
+production-path observations before they supported coverage.
+
+**The friction.** Repository edits happened before the new judgment that constrained them. The
+edits were reversible, but two audit rounds caused rework and interrupted the implementation.
+
+**The observation.** If an amendment regroups existing witnesses, audit each new set before the
+amendment freezes its work shape. This moves a required judgment earlier. It does not automate
+coverage.
+
+One occurrence makes this a watch item. A repeat will show whether Crux needs an explicit entry
+gate for coverage changes.

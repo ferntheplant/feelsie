@@ -327,3 +327,41 @@ and test markers false. The operator separated context structure from runtime ab
 The implementation had to recover the marker grammar, project declarations, rationale grounding
 rules, and amendment lifecycle from the Crux repository. The tracker held no concise builder
 entrypoint for that material.
+
+---
+
+## 2026-08-18 - A005 altitude correction
+
+A005 replaced six check-level claims with two reader-visible claims. The first independent
+coverage audit changed the amendment before the gate ran.
+
+### Clerical - candidates for tooling
+
+**Six old slugs became two across markers, the catalog, rationales, and feedback.** The work was a
+manual reference migration. This repeats **C4**.
+
+**The feedback record still held a retracted rule after Crux changed.** `CRUX-FEEDBACK.md` called
+witness-kind splits the corrected rule. Crux §5.9 now states the opposite. The stale copy required
+another manual repair.
+
+### Thinking - never automate
+
+**Sound individual witnesses did not settle coverage.** The new configuration claim combined
+three instruments. Reading them as a set exposed the untested upper boundary `24`.
+
+**Partial checks needed production-path connections.** A second audit found that secure token
+generation did not prove secure storage. It also found that strict decoding did not prove that the
+production layer used the decoder.
+
+**The claim text had to return to reader altitude.** The token claim initially repeated its byte
+source, output shape, and lint prohibition. Crux §5.9 identified those as checks, not promises.
+
+### Framework friction
+
+**A005 audited coverage after it prohibited witness edits.** The audits found required test edits
+after the metadata migration started. The operator revised the amendment. See **C19**.
+
+### Re-derived at session start
+
+The amendment named every affected marker and rationale. The implementation still had to verify
+the references and recover the coverage rule. The stale C10 record gave the opposite rule.
