@@ -1,6 +1,7 @@
 # A006 — the declared infrastructure
 
-**Projects**: `root`, `checkin`, `dashboard` · **Status**: proposed · **Gated by**: the Alchemy
+**Project**: `root` · **Packages**: the repository root, `apps/checkin`, `apps/dashboard` ·
+**Status**: proposed · **Gated by**: the Alchemy
 adoption and its spike ([`ALCHEMY-MIGRATION.md`](../ALCHEMY-MIGRATION.md) §7)
 
 The claims F10 deleted, plus two it never reached. Every one is a claim about what the repository
@@ -66,16 +67,22 @@ the ecosystem sets two different ceilings inside one amendment.
 and the apex records concern mail that has nothing to do with this project.
 
 **So a fourth stack, `alchemy.run.ts` at the repository root, holds the zone and its records**, and
-this amendment adjusts the plan accordingly. That gives `root` its first claims.
+this amendment adjusts the plan accordingly.
 
-[C11](../CRUX-FEEDBACK.md) predicted the root project would hold mostly `@kind development` claims
-and was careful to call that a correlation rather than an identity. This is the counter-example
-arriving from the direction C11 left open: `root/dns/apex-mail-is-declared` is a capability claim,
-at the root, because the zone is a capability of the repository and of no package in it.
+`root` is no longer the prefix of a root project among several — it is the prefix of the only
+project, since [`ONE-PROJECT.md`](../ONE-PROJECT.md) landed. What survives that collapse is the
+placement question, which is about the `<path>` segment: `dns` belongs to no package, so the
+claim below is the first one whose subject is the repository itself rather than something under
+`packages/` or `apps/`.
+
+[C11](../CRUX-FEEDBACK.md) predicted the root would hold mostly `@kind development` claims and was
+careful to call that a correlation rather than an identity. This is the counter-example arriving
+from the direction C11 left open: `root/dns/apex-mail-is-declared` is a capability claim about the
+repository itself, because the zone is a capability of the repository and of no package in it.
 
 ## Add
 
-### `dashboard/is-behind-access`
+### `root/dashboard/is-behind-access`
 
 **Kind**: capability
 **Claim**: The dashboard is served only behind an Access application. The application's domain is
@@ -100,7 +107,7 @@ This is the claim that carries the weight A003 left with the runbook. It is also
 witnesses are furthest from the thing a reader cares about, which is why the next section is
 written as plainly as it is.
 
-### `checkin/email/destination-is-pinned`
+### `root/checkin/email/destination-is-pinned`
 
 **Kind**: capability
 **Claim**: The send binding pins one destination address, and that address is the same configured
@@ -155,7 +162,7 @@ F2's whole worry is a deletion nobody sees. The claim is the precondition, not t
 are `A` and `CNAME` only. If MX is not supported this claim does not get written and the rest of
 the amendment is unaffected.
 
-### `checkin/form/consults-a-rate-limiter`
+### `root/checkin/form/consults-a-rate-limiter`
 
 **Kind**: capability
 **Claim**: The form's POST path consults a rate limiter before recording, and refuses without
@@ -205,9 +212,10 @@ authoring time rather than after an audit.
 ## The work
 
 1. Adopt Alchemy through Phase 4 of [`ALCHEMY-MIGRATION.md`](../ALCHEMY-MIGRATION.md).
-2. Add the fourth stack at the repository root for the zone and its records, and declare
-   `@project root` in the root [`GLOSSARY.md`](../../GLOSSARY.md) — it names the project today but
-   holds no claims, so this is the merge that makes the prefix real.
+2. Add the fourth stack at the repository root for the zone and its records. The root
+   [`GLOSSARY.md`](../../GLOSSARY.md) already declares `@project root`, and since
+   [`ONE-PROJECT.md`](../ONE-PROJECT.md) landed it is the only `@project` in the repository, so
+   there is no glossary work left for this amendment to do.
 3. Hoist declarative values into `src/infra.ts` in each stack's package. This is the step every
    witness depends on; do it before writing any of them.
 4. Write the four claims' witnesses, one custom lint rule per claim that names one

@@ -14,31 +14,33 @@ finding).
 
 Entries are in the order they were found, not in numerical order. The index is the queue.
 
-| #   | Finding                                                     | Status     | Destination      |
-| --- | ----------------------------------------------------------- | ---------- | ---------------- |
-| C1  | a claim's subject must be rederivable from the repository   | `settled`  | crux §5          |
-| C2  | a rationale ships with the claims it grounds                | `settled`  | crux §11.5, §6.6 |
-| C3  | the witness assignment is where the design happens          | `open`     | cairn            |
-| C4  | cairn owns the cross-references                             | `repeated` | cairn            |
-| C5  | an amendment has nowhere to live before there is a branch   | `settled`  | cairn            |
-| C6  | fog in the target repository pollutes product history       | `settled`  | cairn            |
-| C7  | an exit gate does work an open-questions list cannot        | `settled`  | evidence for §10 |
-| C8  | "claim, or settled by construction?" has no mechanical form | `settled`  | never automate   |
-| C9  | one prose sentence, two claims, two projects                | `watch`    | —                |
-| C10 | claim boundaries follow reader-visible failures             | `settled`  | crux §5.9        |
-| C11 | the root project holds development claims or none           | `watch`    | —                |
-| C12 | the root project is named `root`                            | `settled`  | crux §3.4, §2.2  |
-| C13 | fog can clear without producing anything                    | `watch`    | —                |
-| C14 | a value held outside the repository raises its claim        | `settled`  | crux §5          |
-| C15 | a third-party type-aware linter is a witness supply         | `settled`  | crux §5.2, §6.3  |
-| C16 | a fog item must record what would clear it                  | `repeated` | cairn            |
-| C17 | markdown directives are invisible in rendered views         | `settled`  | crux §6.3        |
-| C18 | directive names collide with other ecosystems               | `settled`  | crux §6.1, §6.6  |
-| C19 | audit coverage before an amendment freezes witness work     | `repeated` | crux §7, §9.2    |
-| C20 | §4.1's boundary is set by tooling, not by principle         | `settled`  | crux §4.1, §5.2  |
-| C21 | no artifact exists for work that changes the witness supply | `repeated` | crux §7, §13     |
-| C22 | an amendment has no vintage                                 | `watch`    | —                |
-| C23 | a tool can be capable of an offline witness and refuse one  | `watch`    | crux §4.1, §5.2  |
+| #   | Finding                                                       | Status     | Destination      |
+| --- | ------------------------------------------------------------- | ---------- | ---------------- |
+| C1  | a claim's subject must be rederivable from the repository     | `settled`  | crux §5          |
+| C2  | a rationale ships with the claims it grounds                  | `settled`  | crux §11.5, §6.6 |
+| C3  | the witness assignment is where the design happens            | `open`     | cairn            |
+| C4  | cairn owns the cross-references                               | `repeated` | cairn            |
+| C5  | an amendment has nowhere to live before there is a branch     | `settled`  | cairn            |
+| C6  | fog in the target repository pollutes product history         | `settled`  | cairn            |
+| C7  | an exit gate does work an open-questions list cannot          | `settled`  | evidence for §10 |
+| C8  | "claim, or settled by construction?" has no mechanical form   | `settled`  | never automate   |
+| C9  | one prose sentence, two claims, two projects                  | `watch`    | —                |
+| C10 | claim boundaries follow reader-visible failures               | `settled`  | crux §5.9        |
+| C11 | the root project holds development claims or none             | `watch`    | —                |
+| C12 | the root project is named `root`                              | `settled`  | crux §3.4, §2.2  |
+| C13 | fog can clear without producing anything                      | `watch`    | —                |
+| C14 | a value held outside the repository raises its claim          | `settled`  | crux §5          |
+| C15 | a third-party type-aware linter is a witness supply           | `settled`  | crux §5.2, §6.3  |
+| C16 | a fog item must record what would clear it                    | `repeated` | cairn            |
+| C17 | markdown directives are invisible in rendered views           | `settled`  | crux §6.3        |
+| C18 | directive names collide with other ecosystems                 | `settled`  | crux §6.1, §6.6  |
+| C19 | audit coverage before an amendment freezes witness work       | `repeated` | crux §7, §9.2    |
+| C20 | §4.1's boundary is set by tooling, not by principle           | `settled`  | crux §4.1, §5.2  |
+| C21 | no artifact exists for work that changes the witness supply   | `repeated` | crux §7, §13     |
+| C22 | an amendment has no vintage                                   | `watch`    | —                |
+| C23 | a tool can be capable of an offline witness and refuse one    | `watch`    | crux §4.1, §5.2  |
+| C24 | a slug rename must not touch every mention of the slug        | `settled`  | crux §6.6, cairn |
+| C25 | the project segment is a constant in a one-project repository | `open`     | crux §3.4        |
 
 ---
 
@@ -780,3 +782,74 @@ verdict is not a dependency.
 
 **Filed `watch`.** One occurrence, in one tool, on one provider. It becomes evidence if a second
 tool moves the same boundary for the same reason.
+
+---
+
+## C24 — A slug rename must not touch every mention of the slug · `settled`
+
+The slug is the hub, and the hub was renamed. `ONE-PROJECT.md` collapsed four project prefixes to
+one, which moved ten enacted slugs and about sixteen proposed ones. The obvious shape of that work
+is a search and replace over the repository, and it is the wrong shape.
+
+**Two kinds of mention look identical and must be treated oppositely.**
+
+- A **citation** names a claim that exists now. `@grounds`, `@attests`, a catalog declaration, an
+  amendment's `### heading`, one amendment referring to another's claim. Every one of these must
+  move, or it dangles.
+- A **record** names a slug as it was written at some past moment. A005's list of the six claims
+  it deleted. A002's _"Renamed from `checkin/exposes-no-history`"_. `FOG-LOG.md` describing what
+  a session did. These must **not** move, because the name is the fact being recorded.
+
+`ONE-PROJECT.md` had already found half of this and stated it as a prohibition on two named files.
+The general rule is the one that generalises: **refile a slug that names something live; leave a
+slug that names something past.** In this repository that put `.scratch/fog.md`'s cleared items and
+the two enacted amendments on the "leave" side, which the prohibition did not reach.
+
+**Why this is a finding and not a house rule.** Crux's form checks find an **orphaned** marker — a
+marker naming no existing claim — and would find every citation left behind. They would also find
+every record, and report it as the same error. A record is not distinguishable from a stale
+citation by any mechanical property: both are a slug-shaped string naming nothing that exists.
+
+The consequence for cairn is direct and it is not "rename everything". A rename tool that operates
+on slug identity corrupts the diary it is supposed to be building. What a tool can honestly do is
+**the join** — show every mention, sorted by file, and let a person mark the boundary once. That
+is the same shape as **C4**, and it is worth noting that C4's remedy is safe only because it never
+proposed to write.
+
+**The cost when nobody does it by hand.** A stale citation is a dangling reference a reader chases
+and loses. A rewritten record is worse and quieter: it reads as true, and the thing it falsifies is
+the account of what the framework cost, which is this project's only deliverable.
+
+---
+
+## C25 — The project segment is a constant in a one-project repository · `open`
+
+Slugs are `<project>/<path>/<predicate>`. Feelsie is one project, settled and now enacted, so every
+slug in the repository begins `root/` and will for as long as the repository exists. The first
+segment carries no information at the point of use, and it is typed and read on every marker, every
+grounding, every catalog declaration, and every amendment heading.
+
+**It is not obviously wrong, and that is why this is `open` rather than a request.** Three
+arguments survive against dropping it:
+
+- The prefix is what makes a slug portable between repositories. A finding lifted into crux's own
+  documentation is unambiguous with the prefix and ambiguous without it.
+- **misfiled** — a slug prefix naming no declared project — is a form error crux gets for free, and
+  it is the check that caught the ordering constraint in this very collapse. `packages/core`'s
+  `@project core` had to be deleted **last**, because deleting it first would have misfiled ten
+  live claims. That is a real check doing real work.
+- A repository that becomes two projects later pays the whole rename again, and this exercise
+  measured that cost: about twenty-six slugs across twelve files, none of it mechanical (see
+  **C24**).
+
+**What is worth recording is narrower.** The operator chose `root` over `feelsie` — the name of a
+_position_ over the name of the _product_ — and `ONE-PROJECT.md` had argued the position name was
+the weaker reading precisely because a position stops meaning anything when there is only one. The
+ruling went the other way for a reason the document did not weigh: `root` was **already declared**
+in the root `GLOSSARY.md`, so it cost no glossary edit and no new word. When a segment carries no
+information, the cheapest true value wins, and cheapness is measured in edits rather than in
+reading.
+
+That is the thing to port: crux says a project is whatever a `GLOSSARY.md` declares, and offers no
+guidance on naming one. In the single-project case the guidance is that the choice barely matters
+and should therefore be made on migration cost, not on how the slug reads.

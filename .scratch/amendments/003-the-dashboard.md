@@ -1,6 +1,7 @@
 # A003 — the dashboard
 
-**Project**: `dashboard` (`apps/dashboard`) · **Status**: proposed · **Gated by**: A001, F7
+**Project**: `root` · **Package**: `apps/dashboard` · **Status**: proposed · **Gated by**:
+A001, F7
 
 SvelteKit on `adapter-cloudflare`, bound to the same D1 database, behind Access.
 
@@ -12,22 +13,16 @@ choosing a witness means rejecting the others.
 
 Both claims survive unchanged. Both witness sets do not.
 
-- `dashboard/never-writes` picked the type witness and argued the test and the lint rule were
+- `root/dashboard/never-writes` picked the type witness and argued the test and the lint rule were
   "both worse". Under §5.8 they are supplements, not rejected alternatives — and the type witness
   as described does not close what the amendment thought it closed.
-- `dashboard/shows-the-history` settled for a kind-4 witness file on the grounds that a test
+- `root/dashboard/shows-the-history` settled for a kind-4 witness file on the grounds that a test
   "attests something narrower than the claim". §5.6 retracts precisely that: **sound does not
   mean sufficient**, and narrower is sound. Most of that claim comes down two rungs.
 
-## Before any claim here is legal
-
-`apps/dashboard/GLOSSARY.md` declares `@project dashboard` in the same merge as the first claim.
-Until it exists both slugs below are **misfiled** (crux §6.6). It declares the prefix, points back
-to the root [`GLOSSARY.md`](../../GLOSSARY.md), and holds no words of its own.
-
 ## Add
 
-### `dashboard/never-writes`
+### `root/dashboard/never-writes`
 
 **Kind**: capability
 **Claim**: The dashboard cannot write to the database.
@@ -65,8 +60,8 @@ runs it — `raw.prepare(text).get(...)` at
 
 So the dashboard cannot receive a SQL-taking interface at all. It receives named operations —
 `listEntries()`, `readEntry(date)` — whose SQL is closed inside `core`, and it never has
-`Database` in scope. This is the same seam A002 needs for `checkin/form/get-does-not-write` and
-`checkin/routes/expose-no-history`; it carries no claim of its own and lands in whichever
+`Database` in scope. This is the same seam A002 needs for `root/checkin/form/get-does-not-write` and
+`root/checkin/routes/expose-no-history`; it carries no claim of its own and lands in whichever
 amendment merges first.
 
 Crux §7 says naming a witness starts the design and **writing** it finishes the design. This is
@@ -89,7 +84,7 @@ the second is exact.
 about intent. Assigning a witness turned it into a decision about who hands the dashboard its
 database handle, which is a design decision that would otherwise have been made by accident.
 
-### `dashboard/shows-the-history`
+### `root/dashboard/shows-the-history`
 
 **Kind**: capability
 **Claim**: The dashboard shows every entry, most recent first, with its three measures and its
@@ -128,8 +123,8 @@ Trend lines, weekly averages, streaks. Every claim about them needs the visual f
 first: a claim about a heat map and a claim about a line chart are not the same claim, and
 writing one now would mean rewriting it later.
 
-`core/streak/*` will belong in A001's project rather than here, since a streak is arithmetic over
-`answered_at` and needs no page to be judged. Move it when F7 clears.
+`root/streak/*` will belong with A001's claims rather than here, since a streak is arithmetic
+over `answered_at` and needs no page to be judged. Move it when F7 clears.
 
 ## Not claimed
 

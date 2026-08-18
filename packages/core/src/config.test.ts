@@ -14,7 +14,7 @@ const validEnvironment = {
   [configEnvironmentVariables.timeZone]: "America/New_York",
 };
 
-// @attests core/config/is-required-and-valid
+// @attests root/config/is-required-and-valid
 it("exposes configured operations through the CoreConfig service", () => {
   expectTypeOf<Effect.Services<typeof currentLocalTime>>().toEqualTypeOf<CoreConfig>();
   expectTypeOf<Effect.Services<typeof isSendHour>>().toEqualTypeOf<CoreConfig>();
@@ -23,7 +23,7 @@ it("exposes configured operations through the CoreConfig service", () => {
   expectTypeOf<Layer.Success<ReturnType<typeof configLayer>>>().toEqualTypeOf<CoreConfig>();
 });
 
-// @attests core/config/is-required-and-valid
+// @attests root/config/is-required-and-valid
 it.effect("requires every configuration value without a fallback", () =>
   Effect.gen(function* () {
     for (const missing of Object.values(configEnvironmentVariables)) {
@@ -35,7 +35,7 @@ it.effect("requires every configuration value without a fallback", () =>
   }),
 );
 
-// @attests core/config/is-required-and-valid
+// @attests root/config/is-required-and-valid
 it.effect("validates configuration boundaries before use", () =>
   Effect.gen(function* () {
     const invalidEnvironments = [

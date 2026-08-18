@@ -7,10 +7,10 @@ CREATE TABLE prompts (
 ) STRICT;
 
 CREATE TABLE entries (
-  -- @attests core/entry/one-per-local-date
+  -- @attests root/entry/one-per-local-date
   date TEXT PRIMARY KEY,
   -- @attests:end
-  -- @attests core/entry/measures-are-one-to-ten
+  -- @attests root/entry/measures-are-one-to-ten
   mood INTEGER NOT NULL CHECK (mood BETWEEN 1 AND 10),
   energy INTEGER NOT NULL CHECK (energy BETWEEN 1 AND 10),
   sleep INTEGER NOT NULL CHECK (sleep BETWEEN 1 AND 10),

@@ -439,3 +439,78 @@ The Alchemy docs pages named in §8 are the current API; the GitHub README, the 
 surface with it. The installed package's own `src/` shipped in the tarball and was the cheapest
 source of truth by a wide margin — every API question in this session was settled by reading
 `node_modules/alchemy/src/`, not by reading documentation.
+
+---
+
+## 2026-08-18 — collapsing four slug prefixes to one
+
+`ONE-PROJECT.md`, enacted. Ten enacted slugs and about sixteen proposed ones moved to the `root/`
+prefix. No claim's truth changed, no witness moved, and `vp run ready` was green on both sides.
+
+### Clerical — candidates for cairn
+
+**Finding every mention of a slug.** Four greps with hand-tuned exclusions, because a slug is a
+slash-separated string and so is every path in the repository — `core/token/cannot-be-guessed` and
+`packages/core/src` are the same shape to `grep`. The join cairn owes here is **C4**, third
+occurrence, and this is the occurrence where it had to be run in reverse: not "is every reference
+consistent" but "where are all of them".
+
+**Transcribing the same rename into four unrelated syntaxes.** A blockquote in the catalog, a
+blockquote in each rationale, a `//` comment in four test files, and a `/* */` comment inside a
+config map. Crux's whole-file-agnostic directive format is what made this survivable — the same
+edit, five times, with no parser involved.
+
+**Re-reading each amendment to find the prose the rename falsified.** The slug edits were
+mechanical. Finding the sentences that stopped being true — _"That gives `root` its first
+claims"_, _"`root/` gets its first claim in 006"_, a `Project` column that is now one value in
+every row, a `## Before any claim here is legal` section per amendment naming a package glossary
+that will never exist — was reading six documents end to end. A tool that knew which claims exist
+could have flagged the first two and never the last two.
+
+### Thinking — never automate
+
+**Deciding which mentions of a slug are citations and which are records.** This is the finding of
+the session and it is **C24**. `ONE-PROJECT.md` had already ruled on `FOG-LOG.md` and
+`CRUX-FEEDBACK.md`; it had not reached `fog.md`'s cleared items, the two enacted amendments, or
+A002's own "renamed from" notes. All three are records, all three had to be left alone, and none of
+them is distinguishable from a stale citation by anything a machine can see. A rename tool that
+ran on slug identity would have quietly rewritten the account of what this project cost.
+
+**Ruling on the name.** The document argued for `feelsie` and the operator chose `root`, which the
+document had called the weaker reading. The reason it was right anyway is **C25**: the segment
+carries no information in a one-project repository, so it should be decided on migration cost, and
+`root` was already declared in the root `GLOSSARY.md`. The document had weighed how the slug reads
+and not what the choice costs to enact.
+
+**Ordering the steps around a form error.** `packages/core/GLOSSARY.md`'s `@project core` had to be
+deleted **last**. Deleting it first would have made all ten live claims **misfiled** — a real crux
+form error, correctly reported, on a repository that was mid-migration and fine. The sequence in
+`ONE-PROJECT.md` got this right in advance, which is the clearest evidence in the exercise that
+writing the sequence down before doing the work is worth its cost.
+
+### Framework friction
+
+**Two homes the plan did not list, and both were load-bearing.** `CRUX.md` carried a paragraph
+whose whole subject was this document being unfinished, and `amendments/README.md` carried a table
+column and a section heading the collapse falsified. `CRUX.md` is the file every session reads
+before writing a claim, so a stale prefix there would have propagated into the next thing anybody
+wrote. Neither appears in `ONE-PROJECT.md`'s table of homes, because that table was built by
+searching for _slugs_ and these two hold _prose about slugs_.
+
+**A grep found four of five homes, and the form check found the fifth.** `0001_core.sql` carries
+two schema witnesses, and every grep in this session had a file-type filter that excluded `.sql` —
+the filter existed because a slug and a path are the same shape (above), so the search had to be
+narrowed to be usable at all. The narrowing is what hid it. What caught it was resolving every
+`@attests` against every `@claim` and printing the ones that did not resolve, which is crux's
+**orphaned** check written as six lines of shell and run after the work looked done. **The lesson
+is not "grep harder".** A search over text needs to know where witnesses live; a resolution over
+slugs does not, and only the second one is a check. This is the strongest argument the exercise has
+produced for the form checks being tooling rather than discipline — they took minutes to write,
+they found a real defect that careful reading had missed twice, and they do not care what language
+the witness is in.
+
+**`packages/core/GLOSSARY.md` was deleted rather than emptied.** The plan said to delete its
+`@project core`. What remained after that was a heading and a sentence pointing at the root
+glossary — and `CRUX.md` already says a package glossary holds no words and that the root one is
+the only one. An empty file that exists only to say it is empty is the kind of artifact a hand-run
+process leaves behind and a tool never would.

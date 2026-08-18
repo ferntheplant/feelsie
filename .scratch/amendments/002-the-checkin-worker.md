@@ -1,12 +1,13 @@
 # A002 — the check-in Worker
 
-**Project**: `checkin` (`apps/checkin`) · **Status**: proposed · **Gated by**: A001, F1
+**Project**: `root` · **Package**: `apps/checkin` · **Status**: proposed · **Gated by**: A001,
+F1
 
 The cron trigger, the form, and the outbound mail. A thin shell over `core`: everything here
 needs a Worker to judge, and nothing here should need more than that.
 
 Blocked on **F1** — if `send_email` does not work inside a `scheduled` handler, the send moves
-to a `fetch` route and `checkin/prompt/is-sent-once-per-local-date` becomes a claim about a
+to a `fetch` route and `root/checkin/prompt/is-sent-once-per-local-date` becomes a claim about a
 different handler.
 
 ## Revised after A005
@@ -24,15 +25,6 @@ and argues its coverage, and three of the five gained a witness of the opposite 
 Two slugs were renamed. `checkin/exposes-no-history` gained the area segment every other slug
 carries, and `checkin/email/addresses-are-never-literal` named the prohibition half of a claim
 that promises the mechanism. Both are cheap now and permanent later.
-
-## Before any claim here is legal
-
-`apps/checkin/GLOSSARY.md` declares `@project checkin` in the same merge as the first claim.
-Until it exists every slug below is **misfiled** — a form error, found by a machine with no
-intelligence (crux §6.6).
-
-It declares the prefix and points back to the root [`GLOSSARY.md`](../../GLOSSARY.md). It holds
-no words of its own, and it should not start holding any while one list still fits.
 
 ## The seam this amendment needs
 
@@ -53,7 +45,7 @@ of A002 and A003 merges first. The other inherits it.
 
 ## Add
 
-### `checkin/form/get-does-not-write`
+### `root/checkin/form/get-does-not-write`
 
 **Kind**: capability
 **Claim**: A GET to a prompt link never writes. Only POST records measures.
@@ -73,7 +65,7 @@ The POST test is the positive-polarity witness §5.8 asks for, and it is not opt
 Worker that records on **neither** verb passes the first two witnesses cleanly, and the claim's
 second sentence is what it violates.
 
-The type witness is A003's technique, mirrored. That amendment found it for `dashboard/never-writes`
+The type witness is A003's technique, mirrored. That amendment found it for `root/dashboard/never-writes`
 and this one asked for a test, which is the ordinary result of two amendments written in one
 sitting and never read against each other.
 
@@ -82,7 +74,7 @@ scanners and link-preview tools open the links in your inbox before you do. A GE
 would mean some days were answered — with whatever the defaults are — before you ever touched
 the email, and you would never see it happen.
 
-### `checkin/prompt/is-sent-once-per-local-date`
+### `root/checkin/prompt/is-sent-once-per-local-date`
 
 **Kind**: capability
 **Claim**: However many times the scheduled handler runs, at most one prompt is created and at
@@ -109,11 +101,11 @@ the witness reached further than the claim, which is the mismatch nothing looks 
 asks whether the witnesses reach the claim and has no question pointing the other way, so an
 over-reaching witness is found only by reading the pair, which is what this revision did.
 
-Renamed from `checkin/prompt/one-per-local-date`, which read against `core/entry/one-per-local-date`
+Renamed from `checkin/prompt/one-per-local-date`, which read against `root/entry/one-per-local-date`
 in a catalog a human reads at the ruling. Different subjects, no form error, and two lines apart
 on the page.
 
-### `checkin/prompt/is-sent-at-the-send-hour`
+### `root/checkin/prompt/is-sent-at-the-send-hour`
 
 **Kind**: capability
 **Claim**: A prompt is sent when the local hour equals the configured send hour, and at no other
@@ -143,7 +135,7 @@ F4 cleared, and cleared into a better claim than the one it was blocking. The dr
 on a number — "the prompt is sent at 21:00" — and the answer was that 21:00 is a _default_, with
 the hour and the zone both configurable. So the claim never mentions 21:00 at all.
 
-### `checkin/routes/expose-no-history`
+### `root/checkin/routes/expose-no-history`
 
 **Kind**: capability
 **Claim**: The check-in Worker serves no route that returns any entry other than the one the
@@ -176,12 +168,12 @@ no SQL in `apps/checkin` to match — every statement is built inside `packages/
 and the Worker only calls named operations. Scoped to `packages/core/**` instead, such a rule
 would fire on the dashboard's legitimate list query. The rule that works is aimed at an import
 specifier rather than a SQL string, which is the same distinction that sank the lint witness for
-`dashboard/never-writes`: an identifier rule is exact, a string rule is about spelling.
+`root/dashboard/never-writes`: an identifier rule is exact, a string rule is about spelling.
 
 The check-in hostname is deliberately open ([`two-hostnames.md`](../../docs/rationale/two-hostnames.md)).
 Renamed from `checkin/exposes-no-history` for the missing area segment.
 
-### `checkin/email/sender-follows-the-configured-domain`
+### `root/checkin/email/sender-follows-the-configured-domain`
 
 **Kind**: capability
 **Claim**: Every address the Worker sends from is constructed from the configured mail domain.

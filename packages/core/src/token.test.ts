@@ -12,7 +12,7 @@ const environment = {
   TZ: "America/New_York",
 };
 
-// @attests core/token/cannot-be-guessed
+// @attests root/token/cannot-be-guessed
 it.effect("stores token bytes from Web Crypto", () => {
   const getRandomValues = vi
     .spyOn(globalThis.crypto, "getRandomValues")
@@ -37,7 +37,7 @@ it.effect("stores token bytes from Web Crypto", () => {
   ).pipe(Effect.ensuring(Effect.sync(() => getRandomValues.mockRestore())));
 });
 
-// @attests core/token/cannot-be-guessed
+// @attests root/token/cannot-be-guessed
 it.effect("generates distinct 32-byte base64url tokens", () =>
   Effect.gen(function* () {
     const tokens = yield* Effect.all(Array.from({ length: 1_000 }, () => generateToken));

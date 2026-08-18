@@ -1,4 +1,4 @@
-> @grounds core/config/is-required-and-valid
+> @grounds root/config/is-required-and-valid
 
 # The core is written in Effect
 
