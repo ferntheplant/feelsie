@@ -1,12 +1,12 @@
 # A004 — the backup
 
-**Project**: `checkin` (`apps/checkin`) · **Status**: proposed · **Gated by**: A002
+**Project**: `root` · **Package**: `apps/checkin` · **Status**: proposed · **Gated by**: A002
 
 A second cron trigger on the check-in Worker exports D1 and writes the file to R2.
 
 ## Add
 
-### `checkin/backup/writes-a-restorable-export`
+### `root/checkin/backup/writes-a-restorable-export`
 
 **Kind**: capability
 **Claim**: The backup handler writes an object to the configured R2 bucket, and the object it

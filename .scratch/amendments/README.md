@@ -9,14 +9,18 @@ proposed.**
 
 ## Sequence
 
-| #                                           | Unit                           | Project                        | Gated by |
-| ------------------------------------------- | ------------------------------ | ------------------------------ | -------- |
-| [001](./001-the-core.md)                    | config, tokens, dates, entries | `core`                         | —        |
-| [005](./005-the-altitude-correction.md)     | six claims become two          | `core`                         | —        |
-| [002](./002-the-checkin-worker.md)          | cron, form, mail               | `checkin`                      | 001, F1  |
-| [003](./003-the-dashboard.md)               | history and statistics         | `dashboard`                    | 001, F7  |
-| [004](./004-the-backup.md)                  | D1 → R2                        | `checkin`                      | 002      |
-| [006](./006-the-declared-infrastructure.md) | Access, DNS, mail, rate limit  | `root`, `checkin`, `dashboard` | Alchemy  |
+| #                                           | Unit                           | Package                                    | Gated by |
+| ------------------------------------------- | ------------------------------ | ------------------------------------------ | -------- |
+| [001](./001-the-core.md)                    | config, tokens, dates, entries | `packages/core`                            | —        |
+| [005](./005-the-altitude-correction.md)     | six claims become two          | `packages/core`                            | —        |
+| [002](./002-the-checkin-worker.md)          | cron, form, mail               | `apps/checkin`                             | 001, F1  |
+| [003](./003-the-dashboard.md)               | history and statistics         | `apps/dashboard`                           | 001, F7  |
+| [004](./004-the-backup.md)                  | D1 → R2                        | `apps/checkin`                             | 002      |
+| [006](./006-the-declared-infrastructure.md) | Access, DNS, mail, rate limit  | the root, `apps/checkin`, `apps/dashboard` | Alchemy  |
+
+**There is one project and the column does not name it.** Every claim in the repository carries
+the `root/` prefix — see [`ONE-PROJECT.md`](../ONE-PROJECT.md). What differs between amendments is
+which package the work lands in, which is a deployment fact and not a crux one.
 
 The order is not arbitrary. 001 holds every promise that can be judged with no Cloudflare, no
 network, and no emulator — which is most of them. Building it first means the majority of the
@@ -75,20 +79,22 @@ A `wrangler` command is still a legitimate witness when it runs **fully locally*
 dev`, `--local`, `deploy --dry-run`. Those read repository configuration and ask Cloudflare
 nothing, so their answer is rederivable from a checkout. Every test in 002 and 004 runs that way.
 
-## `root/` gets its first claim in 006
+## 006 holds the first claim about the repository itself
 
-The repository root is a project like any other when it holds claims of its own, and here it is
-called `root`. Crux has since adopted the same word and recorded `workspace` as rejected, so the
-two agree; see [C12](../CRUX-FEEDBACK.md) for how that was settled.
+`root` was chosen as the name of the repository-root project, back when four projects were
+planned. Crux adopted the same word and recorded `workspace` as rejected, so the two agree; see
+[C12](../CRUX-FEEDBACK.md) for how that was settled. It is now the prefix of the **only** project,
+which [`ONE-PROJECT.md`](../ONE-PROJECT.md) settled and this repository has enacted.
 
-It holds nothing today. 006 changes that with `root/dns/apex-mail-is-declared`, because the zone
-belongs to no package: both hostnames live in it, and the apex records concern mail that has
-nothing to do with this project.
+What survives that collapse is a question about the `<path>` segment rather than the prefix. Every
+claim in the catalog today has a package to point at. `root/dns/apex-mail-is-declared` is the
+first that does not: the zone belongs to no package, because both hostnames live in it and the
+apex records concern mail that has nothing to do with this project.
 
 **That claim is `@kind capability`, which [C11](../CRUX-FEEDBACK.md) left room for and did not
 expect.** C11 predicted the root would hold mostly development-kind claims and was careful to call
-that a correlation rather than an identity. The first root claim to arrive is the exception, not
-the rule it predicted.
+that a correlation rather than an identity. The first claim about the repository itself is the
+exception, not the rule it predicted.
 
 The repository's house rules are all `@kind development` claims waiting to be written, and F11
 settled what they will be: Effect-native patterns, carried by the Effect linter's rule ids. They

@@ -10,7 +10,7 @@ const environment = {
   TZ: "America/New_York",
 };
 
-// @attests core/local-date/is-zoned
+// @attests root/local-date/is-zoned
 it.effect("computes local dates and hours in the configured time zone", () => {
   const utcLocalDateMismatch = Date.parse("2024-01-01T02:00:00Z");
   const instants = [Date.parse("2024-03-10T06:30:00Z"), Date.parse("2024-03-10T07:30:00Z"), utcLocalDateMismatch];

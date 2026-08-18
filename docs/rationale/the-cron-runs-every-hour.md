@@ -1,4 +1,4 @@
-> @grounds core/local-date/is-zoned
+> @grounds root/local-date/is-zoned
 
 # The cron runs every hour and the handler decides whether to send
 

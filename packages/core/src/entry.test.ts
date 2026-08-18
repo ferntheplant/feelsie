@@ -33,7 +33,7 @@ const entryForDate = (date: LocalDateType, overrides: Partial<EntryInput> = {}):
   ...overrides,
 });
 
-// @attests core/token/authorises-one-date
+// @attests root/token/authorises-one-date
 it.effect("refuses a token used for another local date", () =>
   withTestDatabase((database) =>
     Effect.gen(function* () {
@@ -52,7 +52,7 @@ it.effect("refuses a token used for another local date", () =>
   ),
 );
 
-// @attests core/token/survives-answering
+// @attests root/token/survives-answering
 it.effect("uses one token to replace an answer before expiry", () =>
   withTestDatabase(() =>
     Effect.gen(function* () {
@@ -66,7 +66,7 @@ it.effect("uses one token to replace an answer before expiry", () =>
   ),
 );
 
-// @attests core/prompt/expires-after-seven-days
+// @attests root/prompt/expires-after-seven-days
 it.effect("accepts a token before expiry and refuses it at or after seven days", () =>
   withTestDatabase((database) =>
     Effect.gen(function* () {
@@ -93,7 +93,7 @@ it.effect("accepts a token before expiry and refuses it at or after seven days",
   ),
 );
 
-// @attests core/entry/one-per-local-date
+// @attests root/entry/one-per-local-date
 it.effect("keeps one row after two writes for one local date", () =>
   withTestDatabase((database) =>
     Effect.gen(function* () {
@@ -106,7 +106,7 @@ it.effect("keeps one row after two writes for one local date", () =>
   ),
 );
 
-// @attests core/entry/measures-are-one-to-ten
+// @attests root/entry/measures-are-one-to-ten
 it.effect("rejects measures below one and above ten", () =>
   withTestDatabase((database) =>
     Effect.sync(() => {
@@ -126,7 +126,7 @@ it.effect("rejects measures below one and above ten", () =>
   ),
 );
 
-// @attests core/entry/last-write-wins
+// @attests root/entry/last-write-wins
 it.effect("returns the measures from the last write", () =>
   withTestDatabase(() =>
     Effect.gen(function* () {
@@ -156,7 +156,7 @@ it.effect("returns the measures from the last write", () =>
   ),
 );
 
-// @attests core/entry/note-round-trips
+// @attests root/entry/note-round-trips
 it.effect("returns a note unchanged and accepts an entry without one", () =>
   withTestDatabase(() => {
     const note = `First line\n"it's fine" 🌱`;

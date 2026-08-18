@@ -1,7 +1,7 @@
-> @grounds core/token/cannot-be-guessed
-> @grounds core/token/authorises-one-date
-> @grounds core/token/survives-answering
-> @grounds core/prompt/expires-after-seven-days
+> @grounds root/token/cannot-be-guessed
+> @grounds root/token/authorises-one-date
+> @grounds root/token/survives-answering
+> @grounds root/prompt/expires-after-seven-days
 
 # The token is random and stored, not signed
 

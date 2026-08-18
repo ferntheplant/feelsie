@@ -60,10 +60,10 @@ Crux §5.9 and §4.1.
 
 A weak generator, a `Math.random` call, and a sixteen-byte value are three defects found by three
 different checks. They produce one visible failure: somebody can guess the token. That is **one**
-claim — `core/token/cannot-be-guessed` — holding three witnesses.
+claim — `root/token/cannot-be-guessed` — holding three witnesses.
 
 Two properties are two claims when they can fail separately **and** a reader would see two
-different things. `core/entry/one-per-local-date` and `core/entry/last-write-wins` stay apart:
+different things. `root/entry/one-per-local-date` and `root/entry/last-write-wins` stay apart:
 duplicated rows and stale data are different failures.
 
 Four tests, in order:
@@ -77,7 +77,7 @@ Four tests, in order:
    is used rather than what it is. The mail domain is a secret, so the claim is _no address is
    written as a literal_.
 4. **Does the claim describe its own witness?** Then it is at the wrong altitude. A claim is about
-   the **subject**. `core/config/is-context-service` describes an instrument, and it should never
+   the **subject**. `root/config/is-context-service` describes an instrument, and it should never
    have been a claim.
 
 **The operator must be able to rule on it.** A human has an opinion about _nobody can guess the
@@ -96,11 +96,12 @@ second vocabulary to hold — so no package declares `@project`, and the root
 about crux: a monorepo whose packages are separate products, crux's own included, splits
 differently.
 
-**The prefixes have not caught up.** `core/` is enacted in the catalog and the amendments have
-already spent `checkin/`, `dashboard/`, and `root/`, all of them written when four projects were
-planned. Collapsing them to one prefix is [`.scratch/ONE-PROJECT.md`](./.scratch/ONE-PROJECT.md),
-and until it lands `packages/core/GLOSSARY.md` keeps its `@project core` — deleting it first
-would make every enacted slug **misfiled**.
+**The prefix is `root/`, and it is the only one.** `core/`, `checkin/`, `dashboard/`, and `root/`
+were all written when four projects were planned;
+[`.scratch/ONE-PROJECT.md`](./.scratch/ONE-PROJECT.md) collapsed them, and the operator ruled for
+`root`. The old prefixes were demoted to the `<path>` segment where a subsystem belongs —
+`root/checkin/form/get-does-not-write` — except `core/`, which named a package rather than a
+subsystem and was dropped: `core/token/cannot-be-guessed` is now `root/token/cannot-be-guessed`.
 
 **A package glossary holds no words.** Not now, and not when one is reintroduced for some other
 reason. The words all live at the root — measure, entry, check-in, prompt, token, local date,
@@ -163,7 +164,7 @@ extent is too wide:
 ```jsonc
 {
   "rules": {
-    /* @attests core/token/cannot-be-guessed */
+    /* @attests root/token/cannot-be-guessed */
     "no-restricted-properties": "error",
     /* @attests:end */
   },
@@ -175,7 +176,7 @@ renders as a visible band, where an HTML comment renders as nothing and hides th
 pull requests.
 
 ```md
-> @claim core/token/cannot-be-guessed
+> @claim root/token/cannot-be-guessed
 > @kind capability
 
 Nobody can guess a token.
