@@ -34,8 +34,9 @@ export interface LocalTime {
 export interface Prompt {
   readonly date: LocalDate;
   readonly token: Token;
-  readonly sentAt: Timestamp;
-  readonly expiresAt: Timestamp;
+  readonly createdAt: Timestamp;
+  /** Absent until a send returns. An unsent prompt authorises nothing: its token never left. */
+  readonly sentAt?: Timestamp;
   readonly answeredAt?: Timestamp;
 }
 

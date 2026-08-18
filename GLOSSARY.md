@@ -23,9 +23,15 @@ The act of recording an entry.
 _Avoid_: log, submit, report, fill in
 
 **Prompt**:
-A dated invitation to check in. A prompt holds a token, a send time, and an expiry. One prompt
-exists for each local date.
+A dated invitation to check in. A prompt holds a token and, once it has been sent, a send time.
+One prompt exists for each local date.
 _Avoid_: reminder, nudge, ping, notification, invite
+
+**Sent**:
+Of a prompt: its send returned. A prompt is created before it is sent and stays unsent until a
+send returns, so a prompt can exist and authorise nothing — its token never left. Expiry is
+measured from the send time, so an unsent prompt has no expiry either.
+_Avoid_: delivered, emailed, issued
 
 **Token**:
 The random secret that authorises writing one entry. It travels in the prompt's link, and it

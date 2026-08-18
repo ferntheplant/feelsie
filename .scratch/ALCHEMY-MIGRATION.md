@@ -1,6 +1,6 @@
 # Adopting Alchemy
 
-**Status**: phases 0–2 done · **Changes no claims by itself** · **Gate cleared**: the spike in §7
+**Status**: phases 0–3 done · **Changes no claims by itself** · **Gate cleared**: the spike in §7
 
 > **Phases 0, 1, and 2 have landed.** The spike answered (§7, and
 > [`prototypes/alchemy-credentials-spike/`](../prototypes/alchemy-credentials-spike/)), the
@@ -167,9 +167,24 @@ undefined` — only the reference form is piped through Alchemy's `effectClass`.
   `vp check` pass. Every stack now ends its effect with `satisfies InputProps<TheShape>`, which
   is what makes the handle a contract rather than a comment.
 
-**Phase 3 — the check-in Worker (A002).** `Cloudflare.Worker` with `Cloudflare.Workers.cron`,
-`Cloudflare.Email.SendEmail` for the send binding, `Cloudflare.Email.Routing` / `Address` / `Rule`
-for the inbound side. Witnesses per the rewritten A002.
+**Phase 3 — the check-in Worker (A002).** ✅ `apps/checkin`: one `Cloudflare.Worker` holding
+`Cloudflare.Workers.cron("0 * * * *")`, a `Cloudflare.Email.SendEmail` binding whose sender
+allow-list and pinned destination are built from configuration at plan time, and the Core Stack's
+D1 database reached through `coreDatabase`. The inbound side — `Cloudflare.Email.Routing` /
+`Address` / `Rule` — is **not** here: nothing in A002 needs to receive mail, and the declared
+routing destination is A006's claim.
+
+Two things came out differently from this section's expectation:
+
+- **Configuration is read with `Config` in the init phase**, not from `WorkerEnvironment`. Only
+  `Config` registers the binding: at plan time Alchemy intercepts the read, takes the value from
+  the deploying machine's environment, and binds it; at cold start the same read comes off `env`.
+  Reading `env` directly works at runtime and silently binds nothing at deploy. It also means the
+  send binding's `allowedSenderAddresses` can be derived from the configured mail domain at plan
+  time, which is what makes the platform enforce A002's sender claim rather than merely a test.
+- **The emulation witness has to `process.chdir`.** `migrationsDir` is relative, so it resolves
+  against whoever runs the deploy; a real deploy pins that with `vp exec -F @feelsie/core` and a
+  test harness has no `-F`. See the note in A002.
 
 **F1 cleared against this phase and confirmed its shape.** One Worker holds both the cron trigger
 and the send binding; the send executes from the scheduled handler and the binding's pinned
@@ -178,16 +193,24 @@ the handler's failure, so a refused send reports a successful invocation — whi
 A002 and re-cut two of its witness sets. `Cloudflare.Email.SendEmail` is a Worker-only binding
 that declares no cloud-side resource, so none of that needed an account.
 
-**Phase 3 carries a debt from Phase 2: `src/d1.ts` has no test.** `core`'s thirteen tests exercise
-the `node:sqlite` implementation of `Database` and none of them touch the D1 one, so nothing yet
-proves the two agree. That gap is where the interesting failures live — it is the module that
-turns defects into `DatabaseError`, `null` into `Option.none`, and a `batch` call into the
-transaction `DatabaseShape` promises.
+**Phase 3 inherited a debt from Phase 2 and paid part of it.** `core`'s tests exercise the
+`node:sqlite` implementation of `Database` and none of them touched the D1 one, so nothing proved
+the two agree — and that module is where the interesting failures live, since it turns defects
+into `DatabaseError`, `null` into `Option.none`, and a `batch` call into the transaction
+`DatabaseShape` promises.
 
-The fix is a **contract test**: one set of assertions about `DatabaseShape`, run against both
-implementations. It cannot land before Phase 3 because the D1 side needs a Worker —
-`QueryDatabaseBinding` only exists inside one, and `QueryDatabaseLocal` is not an alternative
-(it boots an ephemeral workerd per query and is documented for deploy-time Actions, not suites).
+`apps/checkin/worker.test.ts` now exercises the D1 implementation end to end: a scheduled fire
+writes a prompt through `batch`, a GET reads it back through `first`, a POST upserts an entry and
+updates the prompt in one `batch`, and a second GET reads the result. Every method of
+`DatabaseShape` runs against real D1, through the same capability services the `node:sqlite`
+tests use.
+
+**What is still owed is the negative half.** Nothing yet forces the D1 path to fail — a malformed
+statement, a constraint violation — so the defect-to-`DatabaseError` conversion and the
+transaction rollback are unwitnessed on that side. A **contract test**, one set of assertions run
+against both implementations, is still the right shape for it, and it is now buildable: the D1
+side has a Worker to live in. (`QueryDatabaseLocal` remains not an alternative — it boots an
+ephemeral workerd per query and is documented for deploy-time Actions, not suites.)
 
 **Converting the existing thirteen to D1 is the wrong move and should stay rejected.** They are
 claims about token shape, local-date arithmetic, expiry, and upsert semantics — D1 is SQLite, so
@@ -243,14 +266,14 @@ deploys to prod; local deploys use the OAuth profile from O1.
 
 ## 5. What this does to the amendments
 
-| Amendment      | Effect of the migration                                                                               |
-| -------------- | ----------------------------------------------------------------------------------------------------- |
-| A001 (enacted) | none — pure logic over an unchanged service                                                           |
-| A005 (enacted) | none                                                                                                  |
-| A002           | witnesses unchanged; the miniflare `--local` note becomes `Test.make({ dev: true })` — §7 confirms it |
-| A003           | one witness rises a rung; the rest unchanged                                                          |
-| A004           | improved — R2's read/write split gives the restore leg a read-only handle                             |
-| A006           | becomes writable at all                                                                               |
+| Amendment      | Effect of the migration                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------- |
+| A001 (enacted) | none — pure logic over an unchanged service                                                       |
+| A005 (enacted) | none                                                                                              |
+| A002 (enacted) | built; most witnesses need no emulator at all, and the wiring ones use `Test.make({ dev: true })` |
+| A003           | one witness rises a rung; the rest unchanged                                                      |
+| A004           | improved — R2's read/write split gives the restore leg a read-only handle                         |
+| A006           | becomes writable at all                                                                           |
 
 **The A003 witness that rises.** The rewritten amendment names _a test that parses
 `apps/dashboard/wrangler.jsonc` and asserts the declared binding set_ — kind 2 against untyped
@@ -258,13 +281,14 @@ JSON. With `Cloudflare.InferEnv<typeof Website>` the binding set is a type, so t
 becomes a type-level assertion. Kind 2 → kind 1, on a witness written three sessions ago against a
 file this migration deletes.
 
-**The A002 note that must be rewritten.** A002 closes with a guarantee: _every test here runs
-under `wrangler dev` / miniflare with `--local`; nothing talks to Cloudflare, which is what keeps
-these claims rederivable from a checkout._ That sentence is load-bearing for §4.1 and it names a
-tool this migration removes. Its replacement is `Test.make({ dev: true })` — which flips every
-Worker to workerd in the test process, with D1, R2, KV and Queues emulated locally and `dev:`
--prefixed ids as the proof no cloud call ran — **if and only if the spike confirms it needs no
-credentials.**
+**The A002 note that had to be rewritten.** ✅ A002 closed with a guarantee naming a tool this
+migration removes: _every test here runs under `wrangler dev` / miniflare with `--local`_. That
+sentence is load-bearing for §4.1, and its replacement turned out to be two sentences rather than
+one. Most of A002's witnesses need **no emulator at all** — they run the exported handler values
+against `node:sqlite` through `core`'s capability services, which is where every adversarial case
+belongs because a twenty-four-hour simulated day costs milliseconds there. Only the wiring
+witnesses use `Test.make({ dev: true })`, and they earn their four seconds by closing the one gap
+the fast tests cannot: whether the deployed Worker hands those handlers real bindings.
 
 ## 6. A006, in outline
 

@@ -43,6 +43,10 @@ Entries are in the order they were found, not in numerical order. The index is t
 | C25 | the project segment is a constant in a one-project repository | `open`     | crux §3.4        |
 | C26 | a witness can observe a proxy for its subject and pass        | `settled`  | crux §5.2, §9.2  |
 | C27 | a claim whose subject is another claim's instrument           | `open`     | crux §5, §8.3    |
+| C28 | a witness kind can be unavailable and buildable at once       | `settled`  | crux §5.2        |
+| C29 | a witness needs a working directory nothing gives it          | `watch`    | cairn            |
+| C30 | two claims of one amendment can contradict each other         | `settled`  | crux §7, §9.1    |
+| C31 | a witness written against a later amendment's artifact        | `settled`  | crux §7          |
 
 ---
 
@@ -944,3 +948,115 @@ classified and the cost of getting the classification wrong is one slug. Flagged
 project that adopts crux at scale will have far more than one: any repository whose witnesses come
 from a supply — a shared lint config, a generated schema, a contract-test harness — has one of
 these per supply, and none of them has a home.
+
+---
+
+## C28 — A witness kind can be unavailable and buildable at once · `settled`
+
+A002 named a lint witness: _an email-shaped string literal is denied under `apps/checkin/**`_.
+Oxlint 1.77.0 has no `no-restricted-syntax`. Every restriction rule it ships keys on an
+identifier — `no-restricted-imports`, `no-restricted-properties`, `no-restricted-globals`,
+`no-restricted-exports` — and not one of them can see a string.
+
+CRUX.md already says the ceiling is set by the ecosystem as well as by the claim. What this case
+adds is that **"the ecosystem" is not the same as "the rules your linter ships"**. Oxlint has a
+JS-plugin API; vite-plus already wires one plugin through it; the rule was forty lines. The
+witness stayed at kind 3 by writing the instrument rather than by finding it.
+
+So the question at witness-assignment time is not _does a rule exist_ but _can a rule exist here,
+and what does building it cost_. Those have different answers and the model only asks the first
+one. The cost mattered and was small; had it been large, the honest move would have been kind 2 —
+a test that reads the source — and a note saying the ladder's ceiling was set by budget rather
+than by the ecosystem, which is a third thing again.
+
+**One practical finding underneath it.** The plugin is a plain object rather than
+`definePlugin`/`defineRule` from `@oxlint/plugins`, because that package arrives transitively at
+1.73.0 against an Oxlint pinned at 1.77.0 and `docs/gotchas.md` is explicit that this toolchain's
+versions move as a set. The helpers are identity functions. Declaring the shape locally cost a
+dozen lines of interface and removed a version from the set that has to agree.
+
+**Filed `settled` on one occurrence**, for the same reason C26 was: it is a statement about what
+the ladder measures rather than about this linter, and it is checkable against the model.
+
+---
+
+## C29 — A witness needs a working directory nothing gives it · `watch`
+
+`packages/core`'s D1 resource declares `migrationsDir: "./migrations"`, relative on purpose:
+`AGENTS.md` spells out that an absolute path computed from `import.meta.url` gets written into
+the shared state store and makes a second checkout plan a pointless update. A real deploy pins
+the directory with `vp exec -F @feelsie/core`.
+
+A test has no `-F`. The check-in Worker's emulation witness deploys the Core Stack and the
+Check-in Stack together, and it runs from `apps/checkin`, where `./migrations` is nothing. The
+only instrument available is `process.chdir` at module scope, before either deploy.
+
+It works, it is one line, and it is the sort of line that gets deleted by somebody tidying up.
+What is interesting for cairn is the shape: **a witness can have a requirement that is neither a
+service nor a fixture, and that no harness has a slot for.** The Effect requirement channel — the
+thing this repository leans on hardest — models everything a witness needs _inside_ the program
+and nothing about the process it runs in. Working directory, environment variables, and the
+`.alchemy/` directory the run writes into are all in that category here.
+
+**Filed `watch`.** One occurrence, and the cheap repair is a comment. It is recorded because the
+next repository to hit it will be one where the fix is not one line.
+
+---
+
+## C30 — Two claims of one amendment can contradict each other · `settled`
+
+A002 held `is-sent-at-the-send-hour` ("at no other hour") and `records-a-failed-send` (whose
+witness said "the next fire tries again" and whose coverage note spoke of suppressing "every
+retry for that local date"). Under a strict hourly gate there is no retry within the local date,
+so the second claim's own reasoning was false. Under a loose gate the first claim's second clause
+was false. Both were defensible alone. Neither could be built without deciding the other.
+
+**Nothing in the model looks for this.** Coverage asks whether a claim's witnesses reach that
+claim. Standing asks whether one instrument supports one claim. Both are scoped to a single
+claim, and the form checks are scoped to a single directive. An amendment is the natural unit —
+it is the set of changes one unit of work proposes — and it has no consistency question attached
+to it at all.
+
+The tell, when it finally showed, was not in either claim. It was in a **coverage note**: the
+phrase "every retry for that local date" presupposes retries the sibling claim forbids. Coverage
+prose is where an amendment's assumptions about its neighbours get written down, and it is
+nobody's job to read it against anything.
+
+A005 found the mirror image of this — claims that were individually defensible and collectively
+wrong at the altitude level, and CRUX.md now records that a catalog tiring to read is evidence
+about the design. This is the same failure one level down: **the amendment, not just the catalog,
+needs to be read as a whole before it is built.**
+
+The escalation worked exactly as crux §7 describes it, and it is worth saying so plainly: stating
+the proposed change and stopping produced a better claim than either reading, in one exchange.
+Two of three options offered would have shipped a real defect.
+
+---
+
+## C31 — A witness written against a later amendment's artifact · `settled`
+
+A002 named a lint witness for `root/checkin/routes/expose-no-history`: _`no-restricted-imports`
+under `apps/checkin/**` denying **the entrypoint that carries the list operation**_. The prose
+around it is explicit that the entrypoint is A003's — "it stops being true the moment A003 adds
+`listEntries` to the same entrypoint" — and A003 has not merged. There is no such entrypoint.
+
+Three ways out, and the choice is the finding:
+
+1. **Create the entrypoint now**, empty or holding a `listEntries` nothing calls. Rejected: dead
+   code, and `vp exec fallow` is right to say so.
+2. **Defer the witness to A003.** Rejected: the claim would enter the catalog under-covered on
+   purpose, and the rule that holds a type witness in place is worth least on the day it is
+   written and most on the day somebody else changes the type.
+3. **Deny what exists plus what is coming.** Taken. `@feelsie/core/database` is the entrypoint
+   through which a multi-entry read is expressible today; `importNames: ["EntryHistory",
+"listEntries"]` on `@feelsie/core` is a forward guard on identifiers that do not yet exist.
+
+Oxlint accepts an `importNames` entry for a name no module exports, so the rule is legal and
+silent until the day it is not. **A lint rule can attest a claim against code that has not been
+written**, and nothing in crux says whether that is a witness or a wish. It is not an orphan
+marker — the claim exists — and it is not a dead scope. It has no name.
+
+The general shape: **a witness can be specified against an artifact a later amendment will
+create.** Crux has vocabulary for a claim that cannot yet be stated (fog) and for one stated but
+unbuilt (an amendment). It has none for a witness whose subject is in the future, which is a
+thing that will happen in any repository where amendments are sequenced.

@@ -4,7 +4,7 @@ An amendment is the set of claim changes that one unit of work proposes. It is t
 specification. Its operations are **add**, **change**, and **delete**; every entry names a
 claim, and an add also names the witness that will attest it.
 
-An amendment is enacted by the merge. **001 and 005 are enacted; 002, 003, 004, 006, and 007 are
+An amendment is enacted by the merge. **001, 005, and 002 are enacted; 003, 004, 006, and 007 are
 proposed.**
 
 ## Sequence
@@ -32,6 +32,20 @@ proposing them.
 005 is out of numerical order on purpose. It was gated by nothing and it gated nothing, but it
 corrected the altitude of `core`'s catalog, and 002 and 003 are read against that catalog. It
 merged as `fix(core): align claims with reader-visible failures (#5)`.
+
+## 002 is enacted, and it carried the seam
+
+002 merged with the check-in Worker: `apps/checkin`, six claims in
+[`docs/catalog/checkin.md`](../../docs/catalog/checkin.md), and the capability seam described
+below. One of its claims was reworded at the merge on an operator's ruling — the retry gate —
+and the amendment records what moved.
+
+**003 inherits the seam, and inherits two things nobody predicted.** `packages/core` now exposes
+`PromptRead`, `PromptWrite`, `EntryRead`, and `CheckIn` instead of `Database`; the SQL interface
+moved to `@feelsie/core/database` so a lint rule has an entrypoint to deny; and the package's
+`exports` point at source rather than `dist`, because `vp run ready` tests before it builds. The
+dashboard's `listEntries` must land on a service the check-in Worker never receives — a lint rule
+under `apps/checkin/**` already denies the name.
 
 ## 002 and 003 were revised after 005
 

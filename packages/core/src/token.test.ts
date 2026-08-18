@@ -1,16 +1,14 @@
 import { assert, it, vi } from "@effect/vitest";
 import { Effect } from "effect";
 
-import { configLayer, createPrompt, generateToken } from "#core";
+import { LocalDate, PromptWrite, Timestamp } from "#core";
 
-import { withTestDatabase } from "./test-support/sqlite.ts";
+import { generateToken } from "./core.ts";
+import { withTestCapabilities } from "./test-support/sqlite.ts";
 
 const base64UrlPattern = /^[A-Za-z0-9_-]{43}$/;
-const environment = {
-  MAIL_DOMAIN: "mail.example.com",
-  SEND_HOUR: "21",
-  TZ: "America/New_York",
-};
+const today = LocalDate("2024-06-10");
+const openedAt = Timestamp(Date.parse("2024-06-11T01:00:00Z"));
 
 // @attests root/token/cannot-be-guessed
 it.effect("stores token bytes from Web Crypto", () => {
@@ -23,9 +21,10 @@ it.effect("stores token bytes from Web Crypto", () => {
       array.set(Array.from({ length: 32 }, (_, index) => index));
       return array;
     });
-  return withTestDatabase((database) =>
+  return withTestCapabilities((database) =>
     Effect.gen(function* () {
-      const prompt = yield* createPrompt;
+      const prompts = yield* PromptWrite;
+      const prompt = yield* prompts.open(today, openedAt);
       const stored = database.raw.prepare("SELECT token FROM prompts WHERE token = ?").get(prompt.token);
       assert.strictEqual(getRandomValues.mock.calls.length, 1);
       const bytes = getRandomValues.mock.calls[0]?.[0];
@@ -33,7 +32,7 @@ it.effect("stores token bytes from Web Crypto", () => {
       assert.strictEqual(bytes.byteLength, 32);
       assert.strictEqual(prompt.token, "AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwdHh8");
       assert.deepEqual(stored, { token: prompt.token });
-    }).pipe(Effect.provide(configLayer(environment))),
+    }),
   ).pipe(Effect.ensuring(Effect.sync(() => getRandomValues.mockRestore())));
 });
 

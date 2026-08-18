@@ -3,10 +3,9 @@ import { Effect, Exit } from "effect";
 import type { Layer } from "effect";
 
 import { configLayer, currentLocalTime } from "#core";
-import type { createPrompt, Database, isSendHour, senderAddress } from "#core";
+import type { isSendHour, senderAddress, CoreConfig } from "#core";
 
 import { configEnvironmentVariables } from "./config.ts";
-import type { CoreConfig } from "./config.ts";
 
 const validEnvironment = {
   [configEnvironmentVariables.mailDomain]: "mail.example.com",
@@ -19,7 +18,6 @@ it("exposes configured operations through the CoreConfig service", () => {
   expectTypeOf<Effect.Services<typeof currentLocalTime>>().toEqualTypeOf<CoreConfig>();
   expectTypeOf<Effect.Services<typeof isSendHour>>().toEqualTypeOf<CoreConfig>();
   expectTypeOf<Effect.Services<ReturnType<typeof senderAddress>>>().toEqualTypeOf<CoreConfig>();
-  expectTypeOf<Effect.Services<typeof createPrompt>>().toEqualTypeOf<CoreConfig | Database>();
   expectTypeOf<Layer.Success<ReturnType<typeof configLayer>>>().toEqualTypeOf<CoreConfig>();
 });
 

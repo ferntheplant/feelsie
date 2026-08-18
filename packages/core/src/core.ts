@@ -1,3 +1,11 @@
+// Every operation the rest of the system performs, written against the `Database` service.
+//
+// **Nothing here is exported from the package.** `capabilities.ts` wraps these into narrow
+// capability services and that is the only way in. The reason is a type witness two apps
+// need: a handler typed `Effect<Response, E, PromptRead>` must be unable to write, and
+// narrowing `DatabaseShape` does not achieve that — `first` takes arbitrary statement text
+// and runs it, so `INSERT … RETURNING` writes through a "read-only" handle. The narrowing has
+// to happen above the SQL, which means the SQL never leaves this file.
 import { Clock, DateTime, Effect, Option } from "effect";
 
 import { CoreConfig } from "./config.ts";
@@ -46,21 +54,32 @@ export const senderAddress = (localPart: string): Effect.Effect<string, never, C
     return `${localPart}@${config.mailDomain}`;
   });
 
+/**
+ * The instant a sent prompt stops being answerable. Derived rather than stored: it was always
+ * `sent_at + seven days`, and `0002_prompt_send_lifecycle.sql` dropped the column that held a
+ * second copy of it.
+ */
+export const expiresAt = (prompt: Prompt): Option.Option<Timestamp> =>
+  prompt.sentAt === undefined ? Option.none() : Option.some(Timestamp(prompt.sentAt + sevenDaysInMilliseconds));
+
 const decodePrompt = (row: SqlRow): Effect.Effect<Prompt, DatabaseError> =>
   Effect.try({
     try: () => {
       const answeredAt = row.answered_at;
+      const createdAt = row.created_at;
       const date = row.date;
-      const expiresAt = row.expires_at;
       const sentAt = row.sent_at;
       const token = row.token;
+
+      const isNullableNumber = (value: unknown): value is number | null | undefined =>
+        value === null || value === undefined || typeof value === "number";
 
       if (
         typeof date !== "string" ||
         typeof token !== "string" ||
-        typeof sentAt !== "number" ||
-        typeof expiresAt !== "number" ||
-        (answeredAt !== null && answeredAt !== undefined && typeof answeredAt !== "number")
+        typeof createdAt !== "number" ||
+        !isNullableNumber(sentAt) ||
+        !isNullableNumber(answeredAt)
       ) {
         throw new TypeError("The prompt row has an invalid shape.");
       }
@@ -68,8 +87,8 @@ const decodePrompt = (row: SqlRow): Effect.Effect<Prompt, DatabaseError> =>
       return {
         date: LocalDate(date),
         token: Token(token),
-        sentAt: Timestamp(sentAt),
-        expiresAt: Timestamp(expiresAt),
+        createdAt: Timestamp(createdAt),
+        ...(typeof sentAt === "number" ? { sentAt: Timestamp(sentAt) } : {}),
         ...(typeof answeredAt === "number" ? { answeredAt: Timestamp(answeredAt) } : {}),
       };
     },
@@ -106,28 +125,94 @@ const decodeEntry = (row: SqlRow): Effect.Effect<EntryInput, DatabaseError> =>
     catch: (cause) => new DatabaseError({ cause, operation: "decode entry" }),
   });
 
-export const createPrompt: Effect.Effect<Prompt, DatabaseError, CoreConfig | Database> = Effect.gen(function* () {
-  const config = yield* CoreConfig;
-  const database = yield* Database;
-  const sentAt = Timestamp(yield* Clock.currentTimeMillis);
-  const localTime = localTimeAt(sentAt, config.timeZone);
-  const token = yield* generateToken;
-  const prompt = {
-    date: localTime.date,
-    token,
-    sentAt,
-    expiresAt: Timestamp(sentAt + sevenDaysInMilliseconds),
-  } satisfies Prompt;
+const selectPrompt = "SELECT date, token, created_at, sent_at, answered_at FROM prompts";
 
-  yield* database.batch([
-    {
-      text: "INSERT INTO prompts (date, token, sent_at, expires_at) VALUES (?, ?, ?, ?)",
-      parameters: [prompt.date, prompt.token, prompt.sentAt, prompt.expiresAt],
-    },
-  ]);
+export const promptForDate = (date: LocalDate): Effect.Effect<Option.Option<Prompt>, DatabaseError, Database> =>
+  Effect.gen(function* () {
+    const database = yield* Database;
+    const row = yield* database.first({ text: `${selectPrompt} WHERE date = ?`, parameters: [date] });
+    return yield* Option.match(row, {
+      onNone: () => Effect.succeed(Option.none<Prompt>()),
+      onSome: (value) => decodePrompt(value).pipe(Effect.map(Option.some)),
+    });
+  });
 
-  return prompt;
-});
+export const promptForToken = (token: Token): Effect.Effect<Option.Option<Prompt>, DatabaseError, Database> =>
+  Effect.gen(function* () {
+    const database = yield* Database;
+    const row = yield* database.first({ text: `${selectPrompt} WHERE token = ?`, parameters: [token] });
+    return yield* Option.match(row, {
+      onNone: () => Effect.succeed(Option.none<Prompt>()),
+      onSome: (value) => decodePrompt(value).pipe(Effect.map(Option.some)),
+    });
+  });
+
+/**
+ * The prompt for a local date, creating it if there is none. Idempotent by the primary key
+ * rather than by a read-then-write, so two fires racing on one local date cannot both insert:
+ * the loser's `ON CONFLICT DO NOTHING` is a no-op and the following read returns the winner's
+ * row. The generated token is discarded in that case, which costs nothing.
+ */
+export const openPrompt = (
+  date: LocalDate,
+  at: Timestamp,
+): Effect.Effect<Prompt, DatabaseError | PromptNotFoundError, Database> =>
+  Effect.gen(function* () {
+    const database = yield* Database;
+    const token = yield* generateToken;
+
+    yield* database.batch([
+      {
+        text: "INSERT INTO prompts (date, token, created_at) VALUES (?, ?, ?) ON CONFLICT(date) DO NOTHING",
+        parameters: [date, token, at],
+      },
+    ]);
+
+    const prompt = yield* promptForDate(date);
+    // The row was just written or already existed, so `none` means the write did not land.
+    // Failing here rather than returning an Option keeps the caller from treating a lost
+    // insert as "no prompt today" and sending nothing for the rest of the day.
+    return yield* Option.match(prompt, {
+      onNone: () => Effect.fail(new PromptNotFoundError()),
+      onSome: Effect.succeed,
+    });
+  });
+
+/**
+ * Records that the prompt's send returned. `COALESCE` keeps the first send time: a second
+ * successful send for one local date is already prevented by the handler, and if one ever
+ * happened it must not move the expiry of a token already sitting in an inbox.
+ */
+export const markPromptSent = (date: LocalDate, at: Timestamp): Effect.Effect<void, DatabaseError, Database> =>
+  Effect.gen(function* () {
+    const database = yield* Database;
+    yield* database.batch([
+      {
+        text: "UPDATE prompts SET sent_at = COALESCE(sent_at, ?) WHERE date = ?",
+        parameters: [at, date],
+      },
+    ]);
+  });
+
+/**
+ * Records a send that did not return, with its reason. Nothing outside the handler can observe
+ * a failed send — Alchemy's cron event source reports the invocation as successful either way —
+ * so this row is the only trace the failure leaves.
+ */
+export const recordSendFailure = (
+  date: LocalDate,
+  at: Timestamp,
+  reason: string,
+): Effect.Effect<void, DatabaseError, Database> =>
+  Effect.gen(function* () {
+    const database = yield* Database;
+    yield* database.batch([
+      {
+        text: "INSERT INTO send_failures (date, failed_at, reason) VALUES (?, ?, ?)",
+        parameters: [date, at, reason],
+      },
+    ]);
+  });
 
 export const answerPrompt = (
   token: Token,
@@ -139,20 +224,25 @@ export const answerPrompt = (
 > =>
   Effect.gen(function* () {
     const database = yield* Database;
-    const row = yield* database.first({
-      text: "SELECT date, token, sent_at, expires_at, answered_at FROM prompts WHERE token = ?",
-      parameters: [token],
-    });
+    const found = yield* promptForToken(token);
 
-    if (Option.isNone(row)) {
+    if (Option.isNone(found)) {
       return yield* new PromptNotFoundError();
     }
 
-    const prompt = yield* decodePrompt(row.value);
+    const prompt = found.value;
+    const expiry = expiresAt(prompt);
     const now = yield* Clock.currentTimeMillis;
 
-    if (now >= prompt.expiresAt) {
-      return yield* new PromptExpiredError({ expiresAt: prompt.expiresAt });
+    // An unsent prompt has no expiry because its token never left the building. Refusing it as
+    // "not found" is not a euphemism: from a caller's side there is no difference between a
+    // token that was never issued and one that was never delivered.
+    if (Option.isNone(expiry)) {
+      return yield* new PromptNotFoundError();
+    }
+
+    if (now >= expiry.value) {
+      return yield* new PromptExpiredError({ expiresAt: expiry.value });
     }
 
     if (entry.date !== prompt.date) {

@@ -1,3 +1,5 @@
+> @grounds root/checkin/routes/expose-no-history
+
 # The check-in form and the dashboard are on separate hostnames
 
 `checkin.<domain>` serves the form and carries no Access application. `mood.<domain>` serves the
