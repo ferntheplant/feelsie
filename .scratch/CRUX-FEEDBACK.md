@@ -41,6 +41,8 @@ Entries are in the order they were found, not in numerical order. The index is t
 | C23 | a tool can be capable of an offline witness and refuse one    | `watch`    | crux §4.1, §5.2  |
 | C24 | a slug rename must not touch every mention of the slug        | `settled`  | crux §6.6, cairn |
 | C25 | the project segment is a constant in a one-project repository | `open`     | crux §3.4        |
+| C26 | a witness can observe a proxy for its subject and pass        | `settled`  | crux §5.2, §9.2  |
+| C27 | a claim whose subject is another claim's instrument           | `open`     | crux §5, §8.3    |
 
 ---
 
@@ -853,3 +855,92 @@ reading.
 That is the thing to port: crux says a project is whatever a `GLOSSARY.md` declares, and offers no
 guidance on naming one. In the single-project case the guidance is that the choice barely matters
 and should therefore be made on migration cost, not on how the slug reads.
+
+---
+
+## C26 — A witness can observe a proxy for its subject and pass · `settled`
+
+F1 asked whether `send_email` works inside a `scheduled` handler. It does. The spike that answered
+it found something the question did not ask for, and the finding is worth more than the answer.
+
+**Alchemy's `CronEventSourceLive` wraps every scheduled handler in
+`Effect.catchCause(() => Effect.void)`.** A handler whose send is refused returns
+`{"outcome":"ok"}` with HTTP 200. Alchemy documents the behaviour plainly — a failing handler will
+not crash the Worker, so Cloudflare never observes a failed invocation and its retry never engages
+— and the documentation frames it as a convenience, which for a feed sync it is.
+
+For A002's daily email it is the difference between a witness and a witness-shaped test:
+
+> **"The scheduled fire completed" is true when the send threw.** A witness asserting it affirms a
+> claim about sending while observing nothing about the send.
+
+The draft witnesses for `root/checkin/prompt/is-sent-once-per-local-date` said _"one prompt, one
+send"_ without saying where the send is counted. Counted at the invocation, they pass with zero
+sends. Counted at the binding, they mean what they say. One sentence of the amendment changed and
+its meaning inverted.
+
+**The general form, which is the part to port.** Crux ranks witnesses by the mechanism that
+delivers the verdict — compiler, runner, linter, person — and says nothing about the distance
+between what the witness observes and what the claim is about. A test is kind 2 whether it watches
+the subject or watches a wrapper that reports on the subject's behalf. The ladder has no rung for
+_this witness observes a proxy_, and a proxy is exactly what a framework hands you: an invocation
+result, an HTTP status, a job outcome, a "success" counted by whatever is running your code.
+
+**And the way it was found generalises too.** Crux §9.2's adversarial rules — force the named
+mechanism, hit the boundary from both sides, prove the refusal had no side effect — are written
+about the code under test. Here the defect was in the thing that _runs_ the code under test, and
+it surfaced only because the spike deliberately built a second schedule whose send was guaranteed
+to fail. **Run the adversarial case against the framework, not only against your own code.** The
+question "what does my dependency do when my code fails inside it" has no home in the model and
+answered the most valuable question of the session.
+
+**Filed `settled` on one occurrence**, which is a departure from how `watch` is used here, and the
+reason is that the finding does not depend on the tool. It is a statement about what the witness
+ladder measures, it is checkable against the model rather than against a second sighting, and the
+repair — say where the observation happens — costs a clause.
+
+---
+
+## C27 — A claim whose subject is another claim's instrument · `open`
+
+A007 proposes four development claims. Three are witnessed by lint rules. The fourth is
+_the type-aware lint pipeline is available and denying_, and its subject is the machinery behind
+the other three.
+
+CRUX.md's fourth test says: **does the claim describe its own witness? Then it is at the wrong
+altitude.** `root/config/is-context-service` was deleted under it. This claim does not describe its
+own witness — its witness is a fixture test — it describes somebody _else's_, and the test does not
+reach that case.
+
+**The failure it names is real, and it is silent in the specific way that matters here.** C15
+established the witness supply: every Effect lint rule this project enables is a witness for the
+cost of one comment. What C15 recorded and did not follow through is that the supply can fail.
+Oxlint sits at exactly the version floor `@effect/tsgo` requires, arrives transitively through
+`vite-plus` rather than through the catalog, and the Effect integration works by **patching
+installed files**, reapplied by a `prepare` script. The pipeline breaks by rules quietly not
+firing. Every claim it carries goes green on that day.
+
+So there is a class of claim crux has no vocabulary for:
+
+> **The instrument is live.** Not _is this claim true_, and not _does this witness support this
+> claim_ — but _is the mechanism that would have told us still running_.
+
+**Three readings, and this repository cannot pick between them.**
+
+1. It is an ordinary claim whose subject happens to be tooling, and test 4 needs scoping to _its
+   own_ witness rather than to witnesses generally. Cheapest, and it leaves the model alone.
+2. It is a **standing** question wearing a claim's clothes. An audit already sets a standing per
+   instrument; "the linter is not running" is arguably an unsound instrument rather than a false
+   claim, and the catalog is the wrong home for it.
+3. It is a third thing — the health of the witness supply — that belongs to whatever runs the
+   canvass rather than to the catalog at all. Cairn's problem, not crux's.
+
+Reading 2 is the most interesting and the most awkward: standing is set by a person at an audit,
+and this is precisely a question a machine can answer continuously, which is backwards from how
+crux divides the two.
+
+**Filed `open` and A007 proceeds under reading 1**, because the failure is real whichever way it is
+classified and the cost of getting the classification wrong is one slug. Flagged because the
+project that adopts crux at scale will have far more than one: any repository whose witnesses come
+from a supply — a shared lint config, a generated schema, a contract-test harness — has one of
+these per supply, and none of them has a home.

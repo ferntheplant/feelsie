@@ -142,25 +142,37 @@ mail subdomain needs.
 
 **Witnesses** — two:
 
-| Kind | Attests                                                              |
-| ---- | -------------------------------------------------------------------- |
-| test | the declared record set contains the apex MX records                 |
-| lint | a DNS record may be declared only in the root stack's `src/infra.ts` |
+| Kind | Attests                                                                                 |
+| ---- | --------------------------------------------------------------------------------------- |
+| test | the declared record set contains the apex MX records                                    |
+| lint | a DNS record may be declared only in the root stack's `src/infra.ts`                    |
+| type | MX records are declared through a helper whose parameter type makes `priority` required |
 
 **Coverage.** One failure, and it is the largest in this amendment: your personal email stops
 arriving. The test closes the case where the apex records are absent from the declaration, which is
 what makes their removal a visible diff rather than a silent one. The lint closes a second
 declaration site, because two modules declaring records for one zone is how one of them wins
-without anybody choosing.
+without anybody choosing. The type closes an MX record declared without a priority — Alchemy types
+the field optional though the API requires it for exactly this record type, so the deploy fails
+where a compile should have. A one-line wrapper moves it to kind 1; see the note below.
 
 **This claim is modest and should not be oversold.** It does not promise the records exist in
 Cloudflare, and nothing here detects a change made in the dashboard. What it promises is that the
 repository knows about them — which is the precondition for a plan showing their deletion, and
 F2's whole worry is a deletion nobody sees. The claim is the precondition, not the protection.
 
-**MX support is unverified.** `Cloudflare.DNS.Record` takes a `type`, and the documented examples
-are `A` and `CNAME` only. If MX is not supported this claim does not get written and the rest of
-the amendment is unaffected.
+**MX support is confirmed, and this paragraph used to say the opposite.** The earlier draft called
+it unverified on the ground that the documented examples are `A` and `CNAME` only. Reading
+`Cloudflare/DNS/Record.ts` settles it: `"MX"` is in the record-type union, and `priority` is
+threaded through both the create and the update paths.
+[`ALCHEMY-MIGRATION.md`](../ALCHEMY-MIGRATION.md) risk 4 had already recorded this and the two
+documents disagreed until now — the migration document had the receipts, and this one was stale.
+
+**What the reading found instead is a trap, and it earns the third witness above.** `priority` is
+documented as _"required for `MX` and `URI` records"_ and typed `priority?: number`. So an MX
+record declared with no priority type-checks, and the failure surfaces at the API rather than at
+`vp check`. Since the failing case is a mail record, the failure mode is your mail — which is what
+makes it worth closing structurally rather than remembering.
 
 ### `root/checkin/form/consults-a-rate-limiter`
 

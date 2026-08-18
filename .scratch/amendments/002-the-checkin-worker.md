@@ -1,14 +1,37 @@
 # A002 — the check-in Worker
 
-**Project**: `root` · **Package**: `apps/checkin` · **Status**: proposed · **Gated by**: A001,
-F1
+**Project**: `root` · **Package**: `apps/checkin` · **Status**: proposed · **Gated by**: A001
 
 The cron trigger, the form, and the outbound mail. A thin shell over `core`: everything here
 needs a Worker to judge, and nothing here should need more than that.
 
-Blocked on **F1** — if `send_email` does not work inside a `scheduled` handler, the send moves
-to a `fetch` route and `root/checkin/prompt/is-sent-once-per-local-date` becomes a claim about a
-different handler.
+**F1 cleared, and it changed the witnesses rather than the claims.** `send_email` does work
+inside a `scheduled` handler — one Worker holds both the cron trigger and the send binding, and
+the reserve correction (move the send to a `fetch` route) is not needed. What the spike found on
+the way is in the next section, and it is the reason two witness sets below are not what they
+were. See [`prototypes/cron-send-email-spike/`](../../prototypes/cron-send-email-spike/) and
+[F1](../fog.md#f1--does-send_email-work-inside-a-scheduled-handler--cleared-by-evidence).
+
+## A failing send is silent, and every witness here has to assume it
+
+`CronEventSourceLive` wraps every handler in `Effect.catchCause(() => Effect.void)`. Alchemy
+documents this — a failing handler will not crash the Worker, so Cloudflare never observes a
+failed invocation, its retry never engages, and `controller.noRetry()` is moot. The spike watched
+a refused send return `{"outcome":"ok"}` with HTTP 200.
+
+Three consequences, and they are load-bearing for everything below:
+
+- **A witness that observes the invocation attests nothing.** "The scheduled fire completed" is
+  true when the send threw. Every witness in this amendment observes the send, the prompt row, or
+  the recorded outcome — never the fire.
+- **The handler must make its own failure visible**, because the event source will not. That is
+  a `root/checkin/prompt/records-a-failed-send` shaped promise, and it is added below.
+- **`Effect.retry` is the retry control**, not the platform's. A transient send failure is
+  retried inside the handler or it is not retried at all.
+
+The failure this prevents is the quietest one in the system: the daily mail stops, and every
+signal a platform offers reads normal — including the one
+[`docs/gotchas.md`](../../docs/gotchas.md) already says not to trust.
 
 ## Revised after A005
 
@@ -92,6 +115,12 @@ schedule: a handler that sends once only because one hour matched cannot pass it
 the case where the duplicate arrives from a _different_ hour rather than from a retry. The first
 is this claim's solo witness (§5.7); the second is shared with the claim below.
 
+**"One send" is counted at the binding, not at the fire.** Both witnesses assert against sends
+observed on the `send_email` binding. Counting completed invocations instead would pass with zero
+sends, because the event source reports a thrown send as a successful fire — see the section
+above. This is the difference between a witness and a witness-shaped test, and F1's spike is what
+made it visible.
+
 The cron fires hourly by design, so this is not a defensive nicety — it is the property that
 makes the schedule legal.
 
@@ -134,6 +163,39 @@ to see. So the witnesses moved and the claims did not.
 F4 cleared, and cleared into a better claim than the one it was blocking. The draft was waiting
 on a number — "the prompt is sent at 21:00" — and the answer was that 21:00 is a _default_, with
 the hour and the zone both configurable. So the claim never mentions 21:00 at all.
+
+### `root/checkin/prompt/records-a-failed-send`
+
+**Kind**: capability
+**Claim**: When a send fails, the handler records the failure and does not mark the prompt sent.
+A prompt marked sent is one whose send returned.
+
+**Witnesses** — three:
+
+| Kind | Attests                                                                                       |
+| ---- | --------------------------------------------------------------------------------------------- |
+| test | force the binding to refuse; the failure is recorded with its reason                          |
+| test | force the binding to refuse; the prompt is **not** marked sent, and the next fire tries again |
+| test | a send that returns records no failure and marks the prompt sent                              |
+
+**Coverage.** The §5.8 pair, plus the half that makes the record trustworthy. The first two split
+one failure into the two things a reader would notice separately: _nothing told me it broke_, and
+_it broke and then gave up_. The second is the one that matters most, because a prompt wrongly
+marked sent interacts with `root/checkin/prompt/is-sent-once-per-local-date` to suppress every
+retry for that local date — a single transient failure would cost the whole day silently. The
+third is the opposite polarity: a handler that records a failure on every run satisfies both
+prohibitions and is useless, and nothing above would catch it.
+
+**This claim exists because of F1's spike and would not otherwise have been written.** The event
+source swallows the handler's failure, so nothing outside the handler can observe a bad send —
+not the invocation outcome, not the platform's retry, not the metric `docs/gotchas.md` warns
+about. Recording it inside the handler is the only place the observation can happen, which makes
+it a property of this Worker rather than of monitoring, and therefore claimable.
+
+**What it deliberately does not promise.** That anybody reads the record. Alerting on it is
+monitoring, it is not rederivable from a checkout, and F10's line holds. What is claimable is
+that the information exists at all, which is the precondition — the same shape as
+`root/dns/apex-mail-is-declared` in A006.
 
 ### `root/checkin/routes/expose-no-history`
 
