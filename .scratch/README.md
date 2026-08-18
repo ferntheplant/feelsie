@@ -27,6 +27,10 @@ also sit here. That substitution is itself a finding. See [`FOG-LOG.md`](./FOG-L
 2. [`amendments/`](./amendments/) — what is answerable, in the order it should be built.
 3. [`FOG-LOG.md`](./FOG-LOG.md) — where this hurt, which is the deliverable for cairn.
 
+The plan documents alongside them — [`ALCHEMY-MIGRATION.md`](./ALCHEMY-MIGRATION.md),
+[`ONE-PROJECT.md`](./ONE-PROJECT.md) — are neither fog nor amendments. They hold work that is
+decided and unbuilt, and that changes no claim's truth when it lands.
+
 ## Rules while this is by hand
 
 - **A slug written here and a slug written in `docs/rationale/` must match, and nothing checks

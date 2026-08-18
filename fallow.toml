@@ -5,6 +5,18 @@ entry = [
   # imported, so they need an explicit entry root to stay reachable.
   "apps/*/scripts/*.ts",
   "scripts/*.{ts,mjs}",
+  # Alchemy's own entrypoint. The `alchemy` CLI loads `alchemy.run.ts` by convention and
+  # nothing imports it, which is exactly the shape of a real entry point rather than of
+  # dead code.
+  "**/alchemy.run.ts",
+]
+ignoreDependencies = [
+  # An optional peer of `alchemy`, loaded through `await import("@effect/platform-node/…")`
+  # in the ELSE of the `typeof Bun !== "undefined"` check in Alchemy's
+  # `Util/PlatformServices.ts` — the Bun check guards `@effect/platform-bun`, and this is
+  # the branch a Node repo always takes. It is declared because it is used; it is listed
+  # here because the import is dynamic and there is no static one for fallow to find.
+  "@effect/platform-node",
 ]
 dynamicallyLoaded = [
   # Files loaded at runtime with no static import: child-process spawns, filesystem-loaded
@@ -14,7 +26,7 @@ dynamicallyLoaded = [
 ]
 
 [workspaces]
-patterns = ["apps/*", "packages/*", "tools/*"]
+patterns = ["apps/*", "packages/*", "prototypes/*", "tools/*"]
 
 [duplicates]
 # Hide pair-only clones; focus on widespread copy-paste

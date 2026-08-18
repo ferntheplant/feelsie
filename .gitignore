@@ -52,3 +52,8 @@ CLAUDE.md
 
 # fallow cache
 .fallow/
+
+# Alchemy's local state store, deploy logs, and version-check cache. Deliberately
+# not committed: state describes an account at a moment, and a claim's subject must
+# be rederivable from a checkout. `alchemy.run.ts` is the declaration; this is not.
+.alchemy/
