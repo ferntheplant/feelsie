@@ -4,20 +4,27 @@ An amendment is the set of claim changes that one unit of work proposes. It is t
 specification. Its operations are **add**, **change**, and **delete**; every entry names a
 claim, and an add also names the witness that will attest it.
 
-All of these are **proposed**. An amendment is enacted by the merge, and nothing has merged.
+An amendment is enacted by the merge. **001 is enacted; everything else here is proposed.**
 
 ## Sequence
 
-| #                                  | Unit                           | Project     | Gated by |
-| ---------------------------------- | ------------------------------ | ----------- | -------- |
-| [001](./001-the-core.md)           | config, tokens, dates, entries | `core`      | —        |
-| [002](./002-the-checkin-worker.md) | cron, form, mail               | `checkin`   | 001, F1  |
-| [003](./003-the-dashboard.md)      | history and statistics         | `dashboard` | 001, F7  |
-| [004](./004-the-backup.md)         | D1 → R2                        | `checkin`   | 002      |
+| #                                       | Unit                           | Project     | Gated by |
+| --------------------------------------- | ------------------------------ | ----------- | -------- |
+| [001](./001-the-core.md)                | config, tokens, dates, entries | `core`      | —        |
+| [005](./005-the-altitude-correction.md) | six claims become two          | `core`      | —        |
+| [002](./002-the-checkin-worker.md)      | cron, form, mail               | `checkin`   | 001, F1  |
+| [003](./003-the-dashboard.md)           | history and statistics         | `dashboard` | 001, F7  |
+| [004](./004-the-backup.md)              | D1 → R2                        | `checkin`   | 002      |
 
 The order is not arbitrary. 001 holds every promise that can be judged with no Cloudflare, no
 network, and no emulator — which is most of them. Building it first means the majority of the
-catalog is affirmed by ordinary tests before any infrastructure question is asked.
+catalog is affirmed by ordinary tests before any infrastructure question is asked. It merged as
+`feat(core): implement core package (#3)`, so its claims are live and 005 amends them rather than
+proposing them.
+
+005 is out of numerical order on purpose. It is gated by nothing and it gates nothing, but it
+corrects the altitude of `core`'s catalog, and 002 and 003 will be written by reading that
+catalog. Fixing it after they are written means fixing it three times.
 
 ## Why 001 is not "the Worker"
 
@@ -49,7 +56,8 @@ nothing, so their answer is rederivable from a checkout. Every test in 002 and 0
 ## No `root/` claims yet
 
 The repository root is a project like any other when it holds claims of its own, and here it is
-called `root` (crux spells it `workspace`; see [C12](../CRUX-FEEDBACK.md)).
+called `root`. Crux has since adopted the same word and recorded `workspace` as rejected, so the
+two agree; see [C12](../CRUX-FEEDBACK.md) for how that was settled.
 
 It holds nothing today. Every claim here belongs to `core`, `checkin`, or `dashboard`.
 

@@ -7,15 +7,15 @@ Workers remain proposed.
 ## This project dogfoods crux
 
 **Crux is a conceptual framework for organising requirements so that it is cheap to judge whether
-a codebase satisfies them.** A **claim** is a falsifiable statement the codebase must satisfy; a
-**witness** is a mechanism that judges it; the **catalog** is the set of claims the project
-promises now; **fog** is material wanted but not yet statable as a claim; an **amendment** is the
-set of claim changes one unit of work proposes.
+a codebase satisfies them.** Its vocabulary is used throughout this repository's documentation,
+and reading it as ordinary English will produce confident mistakes — `claim`, `witness`,
+`standing`, `verdict`, and `coverage` are precise terms here.
 
-**Crux lives in a separate repository and is not vendored here. If no path to it was given to
-you, ask the user for one before doing design work.** The vocabulary above is used throughout
-this repository's documentation, and reading it as ordinary English will produce confident
-mistakes — `witness`, `standing`, and `verdict` in particular are precise terms here.
+> **Read [`CRUX.md`](./CRUX.md) before writing a claim, a witness, a marker, or an amendment.** It
+> is the short form: the rules, and none of the arguments.
+
+**The arguments live in crux's own repository, which is not vendored here. If no path to it was
+given to you, ask the user for one before doing design work.**
 
 No tooling implements crux yet, so every artifact in this repository is maintained by hand. That
 friction is the point:
@@ -34,6 +34,7 @@ the running account in [`.scratch/FOG-LOG.md`](./.scratch/FOG-LOG.md).
 | If you need                             | Read                                   |
 | --------------------------------------- | -------------------------------------- |
 | What this project is                    | [`ABSTRACT.md`](./ABSTRACT.md)         |
+| How claims and witnesses work           | [`CRUX.md`](./CRUX.md)                 |
 | What a word means                       | [`GLOSSARY.md`](./GLOSSARY.md)         |
 | What the system promises **now**        | [`docs/catalog/`](./docs/catalog/)     |
 | Why a promise reads as it does          | [`docs/rationale/`](./docs/rationale/) |
