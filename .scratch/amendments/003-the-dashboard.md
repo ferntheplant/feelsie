@@ -58,11 +58,10 @@ runs it — `raw.prepare(text).get(...)` at
 `INSERT … RETURNING` executes and returns its row, and D1's `.first()` behaves the same way. A
 "read-only handle" built by narrowing `DatabaseShape` writes fine.
 
-So the dashboard cannot receive a SQL-taking interface at all. It receives named operations —
-`listEntries()`, `readEntry(date)` — whose SQL is closed inside `core`, and it never has
-`Database` in scope. This is the same seam A002 needs for `root/checkin/form/get-does-not-write` and
-`root/checkin/routes/expose-no-history`; it carries no claim of its own and lands in whichever
-amendment merges first.
+So the dashboard cannot receive a SQL-taking interface at all. It receives named history
+operations whose SQL is closed inside `core`, and it never has `Database` in scope. A002 uses the
+same seam differently: the public form receives one operation that accepts a token and returns
+only its authorized prompt and entry. The seam carries no claim of its own and landed with A002.
 
 Crux §7 says naming a witness starts the design and **writing** it finishes the design. This is
 that, one step later than usual: the witness could not be written until `core` existed, and the

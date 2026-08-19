@@ -35,6 +35,18 @@ debug the rule configuration.
 Oxlint, TypeScript, and `oxlint-tsgolint` to one supported set. Upgrade them as a set. The patch
 command rejects an unsupported combination before it changes the integration.
 
+**An `overrides` entry replaces a rule's options; it does not merge them.** A package-scoped
+`no-restricted-imports` silently drops whatever the base configuration set — so the repository's
+`../**` ban stopped applying inside `apps/checkin` the moment that package got its own entry for
+the same rule, and nothing reported it. Repeat every option you still want. This is the failure
+mode a lint witness is most exposed to, because it looks exactly like passing.
+
+**There is no `no-restricted-syntax`.** Every restriction rule Oxlint 1.77.0 ships keys on an
+identifier — `no-restricted-imports`, `no-restricted-properties`, `no-restricted-globals`,
+`no-restricted-exports` — and none of them can match a string literal. A rule about the _shape of
+a value_ has to be a JS plugin; [`tools/lint/plugin.ts`](../tools/lint/plugin.ts) is this
+repository's.
+
 **`oxlint --version` refuses to answer.** The binary in `node_modules/.bin` is an IDE wrapper for
 `--lsp` mode. Read the version from `pnpm-lock.yaml` or from `node_modules/.pnpm/` instead.
 

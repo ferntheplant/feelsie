@@ -8,21 +8,16 @@
   ],
   "type": "module",
   "imports": {
-    "#core": "./src/index.ts"
+    "#core": "./src/index.ts",
+    "#core/database": "./src/database.ts"
   },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
-    },
-    "./d1": {
-      "types": "./dist/d1.d.mts",
-      "import": "./dist/d1.mjs"
-    },
-    "./stack": {
-      "types": "./dist/Stack.d.mts",
-      "import": "./dist/Stack.mjs"
-    },
+    ".": "./src/index.ts",
+    "./database": "./src/database.ts",
+    "./d1": "./src/d1.ts",
+    "./stack": "./src/Stack.ts",
+    "./test-support": "./src/test-support/sqlite.ts",
+    "./alchemy.run": "./alchemy.run.ts",
     "./package.json": "./package.json"
   },
   "scripts": {

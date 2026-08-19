@@ -593,3 +593,156 @@ That `Cloudflare.D1.ExportDatabase` is an account-API operation and not reachabl
 which A004 assumed the opposite of by omission. The backup handler has to serialise rows through
 the `QueryDatabase` binding. This made the claim better — the export format is repository code
 rather than a vendor endpoint, so the round trip is judgeable from a checkout.
+
+---
+
+## 2026-08-18 — building A002, the check-in Worker
+
+Six claims into the catalog, one package, one migration, and a capability seam through `core`
+that two amendments had been describing and neither had built.
+
+### Thinking — never automate
+
+**Finding that two claims of one amendment contradicted each other.** The strict hour gate and
+the same-date retry cannot both be true, and each claim was defensible on its own page. The tell
+was in a coverage note rather than in either claim: "suppress every retry for that local date"
+presupposes retries the sibling forbids. Nothing in crux reads an amendment as a whole, and
+nothing reads coverage prose against anything. Escalating it produced a better claim than either
+reading, in one exchange. **C30.**
+
+**Deciding where the retry lives.** The amendment said `Effect.retry` is the retry control, and
+it is wrong in a way that only shows once the gate is settled: the cron fires hourly, so the
+_next fire_ is a retry if the gate lets it through, and it buys hours where an in-invocation
+retry buys seconds. Two mechanisms would have needed two witnesses. Choosing between them is not
+a thing a tool decides.
+
+**Splitting `core` into capability services by caller rather than by table.** `PromptRead` and
+`PromptWrite` are separate because the form reads prompts and the schedule writes them;
+`EntryRead` and `CheckIn` are separate across the GET/POST boundary. A service nobody would ever
+hold alone buys no witness, and the temptation is to split by table because tables are what you
+can see.
+
+**Deciding what the lint rule denies when the thing it should deny does not exist yet.** A002's
+witness names the entrypoint A003 will create. Creating it empty is dead code; deferring the
+witness ships an under-covered claim; denying identifiers that do not exist yet is legal, silent,
+and slightly uncomfortable. **C31.**
+
+**Reading the migration's ordering question.** Write-then-send fails towards a retry;
+send-then-write fails towards a duplicate email. That asymmetry is the whole argument for a
+nullable `sent_at`, a rebuilt table, and a rationale document — and none of it is visible from
+the claim, which only says at most one send returns.
+
+### Clerical — candidates for cairn
+
+**Rewriting every one of `core`'s existing witnesses because the functions they called stopped
+being exported.** Not one claim moved. The diff is large and entirely mechanical, and the risk in
+it is that a witness quietly stops attesting what it did — which is the thing no tool checks and
+the reason it is only _mostly_ clerical.
+
+**Keeping six claim slugs in step across the amendment, the catalog, a rationale's `@grounds`,
+markers in four test files, and two entries in `vite.config.ts`.** Nineteen mentions of six
+slugs, all by hand, all silently breakable. **C4**, again, and this is the first time the marker
+count was large enough to be genuinely unpleasant.
+
+**Moving a file's header comment back above its imports, five times.** The formatter sorts
+imports and treats a leading comment as attached to the first one, so a comment written above
+`import { … } from "@feelsie/core"` ends up in the middle of the import block. The fix is a blank
+line. It is pure friction and it damaged documentation that markers do not live in, so nothing
+would have caught it.
+
+**Discovering that pnpm caches the workspace package list.** A new `apps/checkin` was invisible to
+`pnpm install` until `node_modules/.pnpm-workspace-state-v1.json` was deleted. Cost ten minutes
+and taught nothing.
+
+### Framework friction
+
+**A witness that passes on the first run has told you nothing about whether it can fail.** Four
+structural witnesses were deliberately broken and watched to deny; the fifth turned out to have
+been silently disarmed by an Oxlint override replacing the base rule's options. Crux puts the
+adversarial duty in the _audit_, on somebody who did not build — and this particular check does
+not need independence, only discipline, and it is much cheaper in the build. **I5.**
+
+**The seam carries no claim, and "carries no claim" was read as "is small".** Both A002 and A003
+said so in one sentence each. It was a migration, a table rebuild, a package-exports change, and
+a rewrite of thirteen witnesses. **I6.**
+
+**A witness needed a working directory, and the model has no slot for one.** `migrationsDir` is
+relative on purpose; a real deploy pins the directory with `vp exec -F`; a test has
+`process.chdir` and a comment. Everything this repository leans on to describe what a witness
+needs — the Effect requirement channel — describes what the _program_ needs, and says nothing
+about the process. **C29.**
+
+**The witness ladder's ceiling was set by what could be built, not by what was installed.** Oxlint
+ships no rule that can see a string literal, and Oxlint can load a rule that does. Forty lines
+kept the witness at kind 3. The model asks whether a rule exists; the question is whether one can
+exist and what it costs. **C28.**
+
+### Re-derived at session start
+
+That `apps/checkin` did not exist. Every cross-reference to it in A002, A003, A004, A006,
+`ALCHEMY-MIGRATION.md`, and `fallow.toml` was written against a package that had never been
+created, and working out which of those references were decisions and which were assumptions took
+longer than writing the package.
+
+## Independent audit of A002
+
+### Thinking — never automate
+
+**Finding the unobservable commit point in send-then-record.** The email binding can accept a
+message before D1 records success. No test ordering fixes that ambiguity, and a lease only removes
+overlap. The operator chose an at-least-once protocol and lowered both send claims. **C32.**
+
+**Deepening the public read around authorization rather than tables.** A date-based `EntryRead`
+was narrow enough to prevent a list call and broad enough to read history in a loop. The useful
+interface is token in, authorized prompt-and-entry view out. This changed the seam rather than
+adding another witness around the shallow one.
+
+**Putting D1 retries below the domain decision.** Retrying `answerPrompt` repeats its clock and
+expiry checks, so an unknown committed write can become a later domain refusal. Retrying the
+idempotent D1 operation inside the adapter preserves one authorization decision and protects the
+scheduled writes through the same mechanism.
+
+### Clerical — candidates for cairn
+
+**Moving two live slugs after an audit.** The catalog, markers, rationale groundings, amendment,
+and agent instructions all carried the old promises. Historical records kept the old names while
+live citations moved, which repeated C24's citation-versus-record judgment by hand.
+
+**Recounting witnesses after one marker gained two claims.** The amendment's witness tables and
+coverage prose had to be reread after the code markers changed. The marker graph can supply the
+count; the coverage explanation still requires judgment.
+
+## Witness audit of A002
+
+### Thinking — never automate
+
+**Reading the diff for mechanisms the amendment never mentioned.** The claims were covered and
+the witnesses were sound; the gaps were in machinery added after the amendment was written —
+`attempt_id`, the retry's date bound, the GET's refusal branches. Deciding that a mechanism is
+load-bearing is a judgment about what would go wrong, and it cannot be read off the claim. **C33.**
+
+**Choosing `catchTag` over a catch-all on the form path.** `getForm` used to `orDie` a
+`DatabaseError` while the POST path rendered a 503 for the same error. The fix could have been one
+line of catch-all; the tag keeps a second error type a compile error at the annotation instead of
+a silent 503, which is the same reasoning the type witness rests on.
+
+**Deleting `isSendHour` rather than leaving it.** It was reachable only from a type assertion, so
+`fallow` counted it live. It also still computed `hour === sendHour` — the gate the operator's
+second ruling overturned — sitting on the package index looking like the sanctioned way to ask.
+Dead code that is also **wrong** is worse than dead code, and no tool sorts those.
+
+### Clerical — candidates for cairn
+
+**Mutation-testing each witness by hand.** Break the mechanism, run the suite, restore, repeat —
+eight times before the fixes and three after. Every step is mechanical and the whole of the
+judgment sits in choosing the mutation. This is the strongest tooling candidate the project has
+produced so far: the verdicts are exactly what a runner can report.
+
+**Recounting witness tables after markers moved again.** Two claims changed arity, so the
+amendment's tables, its coverage prose, and the marker graph had to be reconciled by reading all
+three. The same clerical note as the last audit, and the count is still the half a tool can own.
+
+**Fencing one file out of a lint witness.** `src/test-support.ts` held the exemption that
+`**/*.test.ts` legitimately needs, while living where production code could import it. Composing
+its address instead removed the exemption. Nothing reported the hole; it took reading the
+override's `files` list against the directory layout.

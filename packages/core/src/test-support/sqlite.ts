@@ -1,12 +1,22 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 
 import { Effect, Option } from "effect";
 
-import { Database, DatabaseError } from "#core";
-import type { DatabaseShape, SqlRow, SqlStatement } from "#core";
+import { capabilitiesLayer, DatabaseError } from "#core";
+import { Database } from "#core/database";
+import type { DatabaseShape, SqlRow, SqlStatement } from "#core/database";
 
-const migration = readFileSync(new URL("../../migrations/0001_core.sql", import.meta.url), "utf8");
+const migrationsDirectory = new URL("../../migrations/", import.meta.url);
+
+// Every migration, in the order Alchemy's `listSqlFiles` applies them: sorted on the numeric
+// prefix that `name.split("_")[0]` reads. Reading the directory rather than naming one file is
+// what keeps this harness and D1 on the same schema — the first version named `0001_core.sql`
+// and would have silently skipped `0002_prompt_send_lifecycle.sql`.
+const migrations = readdirSync(migrationsDirectory)
+  .filter((name) => name.endsWith(".sql"))
+  .sort((left, right) => Number.parseInt(left, 10) - Number.parseInt(right, 10))
+  .map((name) => readFileSync(new URL(name, migrationsDirectory), "utf8"));
 
 const runStatement = (database: DatabaseSync, statement: SqlStatement): void => {
   database.prepare(statement.text).run(...statement.parameters);
@@ -22,7 +32,9 @@ export interface TestDatabase {
 // releases, and `node:sqlite` will not tell you that you did.
 const makeTestDatabase = (): TestDatabase => {
   const raw = new DatabaseSync(":memory:");
-  raw.exec(migration);
+  for (const migration of migrations) {
+    raw.exec(migration);
+  }
 
   return {
     raw,
@@ -63,3 +75,10 @@ export const withTestDatabase = <A, E, R>(
     (database) => use(database).pipe(Effect.provideService(Database, database.service)),
     (database) => Effect.sync(() => database.raw.close()),
   );
+
+/**
+ * The same handle, exposed through every named capability for Core and handler tests. Providing
+ * `Database` directly would let a test bypass the seam that production code uses.
+ */
+export const withTestCapabilities = <A, E, R>(use: (database: TestDatabase) => Effect.Effect<A, E, R>) =>
+  withTestDatabase((database) => use(database).pipe(Effect.provide(capabilitiesLayer)));

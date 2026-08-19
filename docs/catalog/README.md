@@ -2,7 +2,8 @@
 
 The catalog is present tense. It states what Feelsie promises now.
 
-[`core.md`](./core.md) contains the claims for the core package.
+[`core.md`](./core.md) contains the claims for the core package, and
+[`checkin.md`](./checkin.md) those for the check-in Worker.
 
 The promises that `ABSTRACT.md` used to hold are not gone. They are **proposed**, and a
 proposal lives outside the catalog until the merge that enacts it:

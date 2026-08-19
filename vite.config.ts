@@ -23,7 +23,11 @@ export default defineConfig({
   },
   lint: {
     plugins: ["typescript", "unicorn", "oxc", "effecttsgo"],
-    jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
+    jsPlugins: [
+      { name: "vite-plus", specifier: "vite-plus/oxlint-plugin" },
+      // This repository's own rules. See `tools/lint/plugin.ts` for why one had to be written.
+      { name: "feelsie", specifier: "./tools/lint/plugin.ts" },
+    ],
     ignorePatterns: IGNORE_PATTERNS,
     options: {
       typeAware: true,
@@ -95,6 +99,59 @@ export default defineConfig({
         },
       },
       // @attests:end
+      {
+        files: ["apps/checkin/**"],
+        rules: {
+          // @attests root/checkin/email/sender-follows-the-configured-domain
+          "feelsie/no-email-literals": "error",
+          // @attests:end
+          // @attests root/checkin/routes/expose-no-history
+          "feelsie/no-d1-query": "error",
+          "no-restricted-imports": [
+            "error",
+            {
+              paths: [
+                {
+                  name: "@feelsie/core/database",
+                  message:
+                    "The check-in Worker takes named capabilities, never the SQL interface. A statement can return any number of entries.",
+                },
+                {
+                  name: "@feelsie/core",
+                  // The names A003 will add. Denying them before they exist is the point: this
+                  // rule is what holds the type witness in place across that addition, and a
+                  // rule written afterwards is a rule written after the regression.
+                  importNames: ["EntryHistory", "EntryRead", "listEntries"],
+                  message:
+                    "A list operation belongs to the dashboard. This Worker serves no route returning anything but the entry a presented token authorises.",
+                },
+              ],
+              // Carried forward from the base configuration: an override replaces the rule's
+              // options rather than merging them, so omitting this would quietly re-permit
+              // `../**` imports inside this package alone.
+              patterns: [
+                {
+                  group: ["../**/*"],
+                  message: "Use absolute imports (unless import is sibling)",
+                },
+              ],
+            },
+          ],
+          // @attests:end
+        },
+      },
+      {
+        // The prohibition is about the Worker, and a test that asserts an address has to write
+        // one. The positive-polarity witness in `schedule.test.ts` configures two mail domains
+        // and reads back what the handler sent from; it cannot do that without literals, and it
+        // is not code that ships in the Worker. `src/test-support.ts` is deliberately **not**
+        // here: it lives in `src/`, where an exemption would be a hole in the rule rather than a
+        // boundary around it, so it composes its address instead.
+        files: ["apps/checkin/**/*.test.ts"],
+        rules: {
+          "feelsie/no-email-literals": "off",
+        },
+      },
     ],
   },
   run: {

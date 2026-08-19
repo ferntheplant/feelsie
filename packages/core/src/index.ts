@@ -1,15 +1,23 @@
-export { configLayer, decodeConfig } from "./config.ts";
+// The package's public entrypoint. `Database` and the SQL types are **not** here — they are
+// `@feelsie/core/database`, so that reaching arbitrary SQL is an import an app has to write and
+// a lint rule can deny. See `capabilities.ts` for why the narrowing lives above the SQL.
 export {
-  answerPrompt,
-  createPrompt,
-  currentLocalTime,
-  generateToken,
-  isSendHour,
-  readEntry,
-  senderAddress,
-} from "./core.ts";
-export { Database } from "./database.ts";
-export type { DatabaseShape, SqlParameter, SqlRow, SqlStatement } from "./database.ts";
+  capabilitiesLayer,
+  CheckIn,
+  checkInCapabilitiesLayer,
+  CheckInFormRead,
+  EntryRead,
+  PromptWrite,
+} from "./capabilities.ts";
+export type {
+  CheckInFormData,
+  CheckInFormReadShape,
+  CheckInShape,
+  EntryReadShape,
+  PromptWriteShape,
+} from "./capabilities.ts";
+export { configEnvironmentVariables, configLayer, CoreConfig, decodeConfig } from "./config.ts";
+export { currentLocalTime, expiresAt, senderAddress } from "./core.ts";
 export {
   ConfigValidationError,
   DatabaseError,
@@ -17,5 +25,5 @@ export {
   PromptNotFoundError,
   TokenDateMismatchError,
 } from "./errors.ts";
-export { LocalDate, Measure, Timestamp, Token } from "./model.ts";
-export type { EntryInput, LocalTime, Prompt } from "./model.ts";
+export { AttemptId, LocalDate, Measure, Timestamp, Token } from "./model.ts";
+export type { CoreConfigValue, EntryInput, LocalTime, Prompt } from "./model.ts";
