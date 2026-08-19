@@ -20,7 +20,7 @@
 //   with every platform signal reading normal. The evidence is
 //   `prototypes/cron-send-email-spike/`.
 
-import { CoreConfig, currentLocalTime, PromptWrite, Timestamp } from "@feelsie/core";
+import { AttemptId, CoreConfig, currentLocalTime, PromptWrite, Timestamp } from "@feelsie/core";
 import type { DatabaseError, PromptNotFoundError } from "@feelsie/core";
 import { Clock, Effect } from "effect";
 
@@ -57,14 +57,22 @@ export const sendDailyPrompt: Effect.Effect<
   }
 
   const message = yield* promptMessage(prompt.token);
-  const attemptId = yield* Effect.sync(() => crypto.randomUUID());
+  // One identity per attempt, so the D1 adapter's retry of an unknown committed insert lands on
+  // the same row while a genuinely separate attempt gets its own.
+  const attemptId = yield* Effect.sync(() => AttemptId(crypto.randomUUID()));
 
   yield* mailer.send(message).pipe(
     Effect.matchEffect({
       // Not marked sent, so the next fire of this local date opens the same prompt and tries the
       // same token again. A prompt wrongly marked here would suppress every retry for the date
       // and cost the whole day, silently.
-      onFailure: (error) => prompts.recordFailure(localTime.date, now, attemptId, error.reason),
+      // The clock is read again rather than reusing `now`: `now` is when the attempt started, and
+      // a send that hangs for ten minutes before refusing failed ten minutes later. The success
+      // path below has always done this; the two halves now agree.
+      onFailure: (error) =>
+        Effect.flatMap(Clock.currentTimeMillis, (failedAt) =>
+          prompts.recordFailure(localTime.date, Timestamp(failedAt), attemptId, error.reason),
+        ),
       onSuccess: () =>
         Effect.flatMap(Clock.currentTimeMillis, (sentAt) => prompts.markSent(localTime.date, Timestamp(sentAt))),
     }),

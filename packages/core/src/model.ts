@@ -2,6 +2,10 @@ import { Brand } from "effect";
 
 const ValidatedConfig = Symbol("@feelsie/core/ValidatedConfig");
 
+/** One send attempt's identity, kept across the D1 adapter's retry of an unknown committed write. */
+export type AttemptId = Brand.Branded<string, "AttemptId">;
+export const AttemptId: Brand.Constructor<AttemptId> = Brand.nominal<AttemptId>();
+
 export type LocalDate = Brand.Branded<string, "LocalDate">;
 export const LocalDate: Brand.Constructor<LocalDate> = Brand.nominal<LocalDate>();
 

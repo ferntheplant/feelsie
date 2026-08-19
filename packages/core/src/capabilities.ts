@@ -24,7 +24,7 @@ import { Context, Effect, Layer } from "effect";
 import { answerPrompt, markPromptSent, openPrompt, readCheckInForm, readEntry, recordSendFailure } from "./core.ts";
 import { Database } from "./database.ts";
 import type { DatabaseError, PromptExpiredError, PromptNotFoundError, TokenDateMismatchError } from "./errors.ts";
-import type { EntryInput, LocalDate, Prompt, Timestamp, Token } from "./model.ts";
+import type { AttemptId, EntryInput, LocalDate, Prompt, Timestamp, Token } from "./model.ts";
 
 export interface CheckInFormData {
   readonly prompt: Prompt;
@@ -44,7 +44,7 @@ export interface PromptWriteShape {
   readonly recordFailure: (
     date: LocalDate,
     at: Timestamp,
-    attemptId: string,
+    attemptId: AttemptId,
     reason: string,
   ) => Effect.Effect<void, DatabaseError>;
 }
@@ -77,7 +77,7 @@ export class PromptWrite extends Context.Service<PromptWrite, PromptWriteShape>(
     Effect.map(Database, (database) => ({
       open: (date: LocalDate, at: Timestamp) => Effect.provideService(openPrompt(date, at), Database, database),
       markSent: (date: LocalDate, at: Timestamp) => Effect.provideService(markPromptSent(date, at), Database, database),
-      recordFailure: (date: LocalDate, at: Timestamp, attemptId: string, reason: string) =>
+      recordFailure: (date: LocalDate, at: Timestamp, attemptId: AttemptId, reason: string) =>
         Effect.provideService(recordSendFailure(date, at, attemptId, reason), Database, database),
     })),
   );

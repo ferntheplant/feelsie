@@ -13,7 +13,7 @@ import { TestClock } from "effect/testing";
 
 import { Mailer, mailerLayer } from "./mailer.ts";
 import { sendDailyPrompt } from "./schedule.ts";
-import { localDay, localHour, testConfig, testMailer } from "./test-support.ts";
+import { localDay, localHour, nextLocalDay, testConfig, testMailer } from "./test-support.ts";
 
 const hoursOfTheDay = Array.from({ length: 24 }, (_, hour) => hour);
 
@@ -24,7 +24,14 @@ const promptRow = (database: TestDatabase): unknown =>
   database.raw.prepare("SELECT date, sent_at FROM prompts WHERE date = ?").get(localDay);
 
 const failureRows = (database: TestDatabase): ReadonlyArray<unknown> =>
-  database.raw.prepare("SELECT date, reason FROM send_failures ORDER BY seq").all();
+  database.raw.prepare("SELECT date, failed_at, reason FROM send_failures ORDER BY seq").all();
+
+/** One identity per attempt is what keeps a day's failures from collapsing onto one row. */
+const failureAttemptIds = (database: TestDatabase): ReadonlyArray<unknown> =>
+  database.raw
+    .prepare("SELECT attempt_id FROM send_failures ORDER BY seq")
+    .all()
+    .map((row) => row.attempt_id);
 
 // @attests root/checkin/prompt/reuses-one-prompt-until-success
 it.effect("creates one prompt and stops after a returned send is recorded", () =>
@@ -91,8 +98,9 @@ it.effect("follows the configured send hour rather than a fixed one", () =>
 );
 
 // @attests root/checkin/prompt/attempts-start-at-the-send-hour
+// @attests root/checkin/prompt/records-a-failed-send
 it.effect("never attempts a send before the send hour, and keeps trying after it", () =>
-  withTestCapabilities(() => {
+  withTestCapabilities((database) => {
     // Refuses everything, so nothing is ever marked sent and every hour of the day is free to
     // try. What it attempts is then exactly the set of hours the gate admits.
     const mailer = testMailer(() => "the binding refused");
@@ -112,6 +120,14 @@ it.effect("never attempts a send before the send hour, and keeps trying after it
       // going quiet after one attempt. An email at 3am is the failure this half prevents; a
       // transient blip costing the whole day is the failure the other half prevents.
       assert.deepEqual(attemptedAt, [21, 22, 23]);
+
+      // Three refusals, three records. `recordSendFailure` upserts on `attempt_id`, so an
+      // identity reused across attempts would leave the day holding its first failure's time
+      // and its last failure's reason — one row where three things went wrong, and no witness
+      // above would see the difference.
+      const identities = failureAttemptIds(database);
+      assert.strictEqual(identities.length, 3);
+      assert.strictEqual(new Set(identities).size, 3);
     }).pipe(Effect.provide(mailer.layer), Effect.provide(testConfig()));
   }),
 );
@@ -129,6 +145,34 @@ it.effect("attempts on the first fire after the send hour when the exact-hour fi
   }),
 );
 
+// @attests root/checkin/prompt/attempts-start-at-the-send-hour
+it.effect("abandons an unsent prompt when the local date ends", () =>
+  withTestCapabilities((database) => {
+    // Refuses every attempt of the first local date, and accepts on the next one.
+    const mailer = testMailer((attempt) => (attempt <= 3 ? "the binding refused" : undefined));
+    return Effect.gen(function* () {
+      for (const hour of hoursOfTheDay) {
+        yield* TestClock.setTime(localHour(hour));
+        yield* sendDailyPrompt;
+      }
+      assert.strictEqual(mailer.attempts.length, 3);
+
+      yield* TestClock.setTime(localHour(24 + 21));
+      yield* sendDailyPrompt;
+
+      // "until one returns **or the local date ends**" — the half the retry wording introduced
+      // and nothing observed. Yesterday's prompt is never retried and stays unsent; today's is a
+      // new row carrying a new token, so nobody opens their inbox to a link dated yesterday.
+      assert.strictEqual(mailer.attempts.length, 4);
+      assert.notStrictEqual(mailer.attempts[3]?.text, mailer.attempts[2]?.text);
+      assert.deepEqual(database.raw.prepare("SELECT date, sent_at FROM prompts ORDER BY date").all(), [
+        { date: localDay, sent_at: null },
+        { date: nextLocalDay, sent_at: localHour(24 + 21) },
+      ]);
+    }).pipe(Effect.provide(mailer.layer), Effect.provide(testConfig()));
+  }),
+);
+
 // @attests root/checkin/prompt/records-a-failed-send
 it.effect("records a refused send with its reason", () =>
   withTestCapabilities((database) => {
@@ -139,15 +183,26 @@ it.effect("records a refused send with its reason", () =>
       // Nothing outside the handler can see this failure. The event source reports the fire as
       // a success, Cloudflare's retry never engages, and the metric `docs/gotchas.md` warns
       // about does not move. This row is the only trace.
+      // `failed_at` is when the send failed, not when the attempt started. The send above takes
+      // ten minutes to refuse, and the success path has always recorded its own return time —
+      // recording the attempt's start on one side and its end on the other would make the two
+      // columns mean different things.
       assert.deepEqual(failureRows(database), [
-        { date: localDay, reason: "email from prompt@mail.example.com not allowed" },
+        {
+          date: localDay,
+          failed_at: localHour(21) + 10 * 60 * 1_000,
+          reason: "email from prompt@mail.example.com not allowed",
+        },
       ]);
     }).pipe(
       Effect.provide(
         mailerLayer({
           send: () =>
-            Effect.fail(
-              new Cloudflare.Email.SendEmailError({ message: "email from prompt@mail.example.com not allowed" }),
+            Effect.andThen(
+              TestClock.adjust("10 minutes"),
+              Effect.fail(
+                new Cloudflare.Email.SendEmailError({ message: "email from prompt@mail.example.com not allowed" }),
+              ),
             ),
         }),
       ),
@@ -176,7 +231,9 @@ it.effect("leaves a refused prompt unsent, and the next fire sends the same toke
       assert.deepEqual(promptRow(database), { date: localDay, sent_at: localHour(22) });
       assert.strictEqual(mailer.sent.length, 1);
       // The same token, because the prompt was reopened rather than replaced — the link in the
-      // second email is the one the first would have carried.
+      // second email is the one the first would have carried. The count comes first so that the
+      // comparison cannot pass by both sides being absent.
+      assert.strictEqual(mailer.attempts.length, 2);
       assert.strictEqual(mailer.attempts[0]?.text, mailer.attempts[1]?.text);
     }).pipe(Effect.provide(mailer.layer), Effect.provide(testConfig()));
   }),

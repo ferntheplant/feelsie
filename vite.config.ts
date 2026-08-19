@@ -144,8 +144,10 @@ export default defineConfig({
         // The prohibition is about the Worker, and a test that asserts an address has to write
         // one. The positive-polarity witness in `schedule.test.ts` configures two mail domains
         // and reads back what the handler sent from; it cannot do that without literals, and it
-        // is not code that ships in the Worker.
-        files: ["apps/checkin/**/*.test.ts", "apps/checkin/src/test-support.ts"],
+        // is not code that ships in the Worker. `src/test-support.ts` is deliberately **not**
+        // here: it lives in `src/`, where an exemption would be a hole in the rule rather than a
+        // boundary around it, so it composes its address instead.
+        files: ["apps/checkin/**/*.test.ts"],
         rules: {
           "feelsie/no-email-literals": "off",
         },

@@ -13,7 +13,7 @@ import { CoreConfig } from "./config.ts";
 import { Database, type SqlRow } from "./database.ts";
 import { DatabaseError, PromptExpiredError, PromptNotFoundError, TokenDateMismatchError } from "./errors.ts";
 import { LocalDate, Measure, Timestamp, Token } from "./model.ts";
-import type { EntryInput, LocalTime, Prompt } from "./model.ts";
+import type { AttemptId, EntryInput, LocalTime, Prompt } from "./model.ts";
 
 const sevenDaysInMilliseconds = 7 * 24 * 60 * 60 * 1_000;
 
@@ -41,12 +41,6 @@ export const currentLocalTime: Effect.Effect<LocalTime, never, CoreConfig> = Eff
   const config = yield* CoreConfig;
   const now = yield* Clock.currentTimeMillis;
   return localTimeAt(now, config.timeZone);
-});
-
-export const isSendHour: Effect.Effect<boolean, never, CoreConfig> = Effect.gen(function* () {
-  const config = yield* CoreConfig;
-  const localTime = yield* currentLocalTime;
-  return localTime.hour === config.sendHour;
 });
 
 export const senderAddress = (localPart: string): Effect.Effect<string, never, CoreConfig> =>
@@ -203,7 +197,7 @@ export const markPromptSent = (date: LocalDate, at: Timestamp): Effect.Effect<vo
 export const recordSendFailure = (
   date: LocalDate,
   at: Timestamp,
-  attemptId: string,
+  attemptId: AttemptId,
   reason: string,
 ): Effect.Effect<void, DatabaseError, Database> =>
   Effect.gen(function* () {

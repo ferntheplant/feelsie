@@ -711,3 +711,38 @@ live citations moved, which repeated C24's citation-versus-record judgment by ha
 **Recounting witnesses after one marker gained two claims.** The amendment's witness tables and
 coverage prose had to be reread after the code markers changed. The marker graph can supply the
 count; the coverage explanation still requires judgment.
+
+## Witness audit of A002
+
+### Thinking — never automate
+
+**Reading the diff for mechanisms the amendment never mentioned.** The claims were covered and
+the witnesses were sound; the gaps were in machinery added after the amendment was written —
+`attempt_id`, the retry's date bound, the GET's refusal branches. Deciding that a mechanism is
+load-bearing is a judgment about what would go wrong, and it cannot be read off the claim. **C33.**
+
+**Choosing `catchTag` over a catch-all on the form path.** `getForm` used to `orDie` a
+`DatabaseError` while the POST path rendered a 503 for the same error. The fix could have been one
+line of catch-all; the tag keeps a second error type a compile error at the annotation instead of
+a silent 503, which is the same reasoning the type witness rests on.
+
+**Deleting `isSendHour` rather than leaving it.** It was reachable only from a type assertion, so
+`fallow` counted it live. It also still computed `hour === sendHour` — the gate the operator's
+second ruling overturned — sitting on the package index looking like the sanctioned way to ask.
+Dead code that is also **wrong** is worse than dead code, and no tool sorts those.
+
+### Clerical — candidates for cairn
+
+**Mutation-testing each witness by hand.** Break the mechanism, run the suite, restore, repeat —
+eight times before the fixes and three after. Every step is mechanical and the whole of the
+judgment sits in choosing the mutation. This is the strongest tooling candidate the project has
+produced so far: the verdicts are exactly what a runner can report.
+
+**Recounting witness tables after markers moved again.** Two claims changed arity, so the
+amendment's tables, its coverage prose, and the marker graph had to be reconciled by reading all
+three. The same clerical note as the last audit, and the count is still the half a tool can own.
+
+**Fencing one file out of a lint witness.** `src/test-support.ts` held the exemption that
+`**/*.test.ts` legitimately needs, while living where production code could import it. Composing
+its address instead removed the exemption. Nothing reported the hole; it took reading the
+override's `files` list against the directory layout.

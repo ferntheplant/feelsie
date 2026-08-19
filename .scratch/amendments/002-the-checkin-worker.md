@@ -88,6 +88,31 @@ The failure this prevents is the quietest one in the system: the daily mail stop
 signal a platform offers reads normal — including the one
 [`docs/gotchas.md`](../../docs/gotchas.md) already says not to trust.
 
+## A second audit, after the ruling
+
+The independent audit above judged claims. A later review judged the **witnesses**, by breaking
+each named mechanism and watching for a denial. Every instrument on the list denied — the type
+witnesses through the compiler, all five lint denials including the carried-forward `patterns`,
+and every behavioural test against its own mutation. Three coverage gaps survived that check, and
+all three are the same shape: **a mechanism that was added during the build and argued for in
+prose, but named by no witness.**
+
+- **`attempt_id` had no witness at all.** Replacing `crypto.randomUUID()` with a constant passed
+  the entire suite. `recordSendFailure` upserts on `attempt_id`, so a day's three refusals would
+  have collapsed onto one row keeping the first failure's time and the last one's reason. The
+  mechanism was introduced by the same fix commit that argued for it, and the claim's witness set
+  looked complete because the claim never mentioned it. Recorded as [C33](../CRUX-FEEDBACK.md).
+- **"or the local date ends" was unwitnessed.** The retry half was added by the operator's first
+  ruling; no schedule test ever crossed a date boundary, so the phrase that bounds the retry had
+  nothing observing it.
+- **The GET witness measured only the happy path.** Three of the handler's four answers are
+  refusals, and the write count was taken around the fourth.
+
+One defect came out of the same pass. `failed_at` was recorded from the clock read **before** the
+send, while `sent_at` had always been read after it, so a send that hung for ten minutes and then
+refused timestamped its failure ten minutes early. The two columns now mean the same kind of
+thing, and a witness holds them there.
+
 ## Revised after A005
 
 This amendment was written before crux had §5.8 (coverage) or §5.9 (group by the failure a reader
@@ -97,7 +122,7 @@ witness**, which is the shape the retracted rule produced.
 Nothing here was regrouped — the six claims were already at reader-visible altitude, which is
 worth noting, because the altitude error in `core` came from splitting under audit pressure and
 these claims never reached an audit. What changed is the witness side. Every add now names a set
-and argues its coverage, and three of the five gained a witness of the opposite polarity that
+and argues its coverage, and three of the six gained a witness of the opposite polarity that
 §5.8 says to check for first.
 
 Two slugs were renamed. `checkin/exposes-no-history` gained the area segment every other slug
@@ -130,8 +155,8 @@ entry reader and never names the raw service.
 writes. Retrying the whole check-in operation would repeat its clock and expiry decisions, so the
 adapter retries documented transient D1 failures twice with exponential backoff. Migration `0003`
 adds an attempt ID, backfills existing rows from their primary keys, and indexes it uniquely. One
-send attempt keeps one UUID through an unknown committed insert and its retry; separate attempts
-remain separate even when their timestamps match.
+send attempt keeps one `AttemptId` through an unknown committed insert and its retry; separate
+attempts remain separate even when their timestamps match.
 
 Two consequences A003 inherits, neither of them predicted here:
 
@@ -178,8 +203,11 @@ values against `node:sqlite`, so they do not attest the deployed Worker.
 
 **Coverage.** The type closes named write operations. It cannot prove that a read operation's
 implementation contains no SQL write. The GET test compares SQLite's connection-wide
-`total_changes()` before and after repeated GETs, so any table write fails it, including writes to
-tables added later. The deployed round trip then closes the Worker wiring gap.
+`total_changes()` before and after, so any table write fails it, including writes to tables added
+later. **The window spans every answer a GET can give** — the served form, a missing token, a
+token that was never issued, and an expired one — because the claim is about the verb and a
+refusal is the easiest branch to add a write to without noticing. The deployed round trip then
+closes the Worker wiring gap.
 The POST test is the positive-polarity witness §5.8 asks for, and it is not optional here — a
 Worker that records on **neither** verb passes the first two witnesses cleanly, and the claim's
 second sentence is what it violates.
@@ -233,7 +261,7 @@ that case from a send that never returned.
 no earlier fire does. Failed attempts retry on later fires until one returns or the local date
 ends.
 
-**Witnesses** — six:
+**Witnesses** — seven:
 
 | Kind | Attests                                                                                         |
 | ---- | ----------------------------------------------------------------------------------------------- |
@@ -242,12 +270,19 @@ ends.
 | test | first fire after the exact hour; it attempts immediately                                        |
 | test | fail at the send hour; the next hourly fire retries                                             |
 | test | refuse for a full day; attempts occur at 21, 22, and 23 only                                    |
+| test | refuse all day, then fire on the next local date; a new prompt, a new token, yesterday unsent   |
 | test | the deployed Worker's schedule reaches the send binding through the production mount            |
 
 **Coverage.** The first two reach the ordinary and configured-hour paths. The late-first-fire test
 distinguishes _at or after_ from exact equality. The failure-then-success test reaches a useful
 retry, and the all-day refusal records the exact admitted hours rather than only their count.
-The deployed witness connects those handler properties to the mounted schedule.
+
+**The sixth is the second sentence's other half, and it was missing.** _Until one returns or the
+local date ends_ bounds the retry, and every witness above lives inside one simulated day, so
+nothing observed the bound. It fires on the next local date after a full day of refusals and
+checks the two things a reader would see go wrong: yesterday's prompt is never retried, and the
+mail that does arrive carries a new token rather than a link dated yesterday. The deployed witness
+connects those handler properties to the mounted schedule.
 
 F4 cleared, and cleared into a better claim than the one it was blocking. The draft was waiting
 on a number — "the prompt is sent at 21:00" — and the answer was that 21:00 is a _default_, with
@@ -259,20 +294,31 @@ the hour and the zone both configurable. So the claim never mentions 21:00 at al
 **Claim**: When a send fails, the handler records the failure and does not mark the prompt sent.
 A prompt marked sent is one whose send returned.
 
-**Witnesses** — three:
+**Witnesses** — four:
 
-| Kind | Attests                                                                                       |
-| ---- | --------------------------------------------------------------------------------------------- |
-| test | pass `SendEmailError` through the production mail adapter; its reason is recorded             |
-| test | force the binding to refuse; the prompt is **not** marked sent, and the next fire tries again |
-| test | a send that returns records no failure and marks the prompt sent                              |
+| Kind | Attests                                                                                         |
+| ---- | ----------------------------------------------------------------------------------------------- |
+| test | pass `SendEmailError` through the production mail adapter; its reason and its time are recorded |
+| test | force the binding to refuse; the prompt is **not** marked sent, and the next fire tries again   |
+| test | a send that returns records no failure and marks the prompt sent                                |
+| test | refuse for a full day; three refusals leave three records with three distinct identities        |
 
 **Coverage.** The first witness uses the same adapter the Worker mounts, so it covers the mapping
-from Alchemy's `SendEmailError` into the handler and observes the failure record. The second
-observes that a failure leaves the prompt unsent; its retry assertions also attest the two send
-protocol claims. The third is the opposite polarity: a successful send records no failure and
-marks the prompt sent. The deployed success witness separately proves that the real binding enters
-through this adapter.
+from Alchemy's `SendEmailError` into the handler and observes the failure record. Its mail adapter
+takes ten minutes to refuse, which is what pins `failed_at` to the send's failure rather than to
+the attempt's start — the success path had always read its own clock, and the two columns have to
+mean the same kind of thing. The second observes that a failure leaves the prompt unsent; its
+retry assertions also attest the two send protocol claims. The third is the opposite polarity: a
+successful send records no failure and marks the prompt sent. The deployed success witness
+separately proves that the real binding enters through this adapter.
+
+**The fourth is what makes _the_ failure into _every_ failure.** `recordSendFailure` upserts on
+`attempt_id`, so one identity reused across a day's attempts would silently fold three refusals
+into a single row — first failure's time, last failure's reason — and the three witnesses above
+all pass. It is the only instrument that reads `attempt_id` at all, and without it migration
+`0003`'s whole mechanism was unwitnessed. `AttemptId` is branded for the same reason every other
+identifier in this repository is: a bare `string` parameter is one call site away from being the
+reason instead.
 
 **This claim exists because of F1's spike and would not otherwise have been written.** The event
 source swallows the handler's failure, so nothing outside the handler can observe a bad send —

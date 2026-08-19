@@ -103,7 +103,14 @@ export const getForm: Effect.Effect<
   // The one entry the token authorises, read by the prompt's own date. Nothing here takes a
   // date from the request, so there is no parameter to widen into somebody else's day.
   return HttpServerResponse.html(checkInForm(prompt.token, prompt.date, entry));
-}).pipe(Effect.orDie);
+}).pipe(
+  // The same answer `postCheckIn` gives a failed write. `catchTag` rather than a catch-all on
+  // purpose: a capability that grew a second error would leave a residual failure the annotation
+  // above rejects, which is a compile error rather than a silent 503.
+  Effect.catchTag("DatabaseError", () =>
+    Effect.succeed(HttpServerResponse.html(temporarilyUnavailablePage()).pipe(HttpServerResponse.setStatus(503))),
+  ),
+);
 
 /**
  * Records the measures. The only handler that names `CheckIn`, which is the only capability

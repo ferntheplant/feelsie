@@ -17,7 +17,7 @@ export type {
   PromptWriteShape,
 } from "./capabilities.ts";
 export { configEnvironmentVariables, configLayer, CoreConfig, decodeConfig } from "./config.ts";
-export { currentLocalTime, expiresAt, isSendHour, senderAddress } from "./core.ts";
+export { currentLocalTime, expiresAt, senderAddress } from "./core.ts";
 export {
   ConfigValidationError,
   DatabaseError,
@@ -25,5 +25,5 @@ export {
   PromptNotFoundError,
   TokenDateMismatchError,
 } from "./errors.ts";
-export { LocalDate, Measure, Timestamp, Token } from "./model.ts";
+export { AttemptId, LocalDate, Measure, Timestamp, Token } from "./model.ts";
 export type { CoreConfigValue, EntryInput, LocalTime, Prompt } from "./model.ts";

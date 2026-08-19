@@ -4,10 +4,9 @@
 // about what **this Worker** can reach, and a type assertion written next to the service would
 // attest the service.
 import { assert, expectTypeOf, it } from "@effect/vitest";
-import { CheckIn, DatabaseError, LocalDate, Measure, PromptWrite, Timestamp } from "@feelsie/core";
+import { CheckIn, CheckInFormRead, DatabaseError, LocalDate, Measure, PromptWrite, Timestamp } from "@feelsie/core";
 import type {
   CheckInFormData,
-  CheckInFormRead,
   CheckInFormReadShape,
   EntryInput,
   LocalDate as LocalDateType,
@@ -88,12 +87,25 @@ it.effect("writes nothing when the prompt link is opened, however many times", (
     Effect.gen(function* () {
       yield* TestClock.setTime(localHour(21));
       const prompt = yield* sentPrompt(today, localHour(21));
+      const link = `${origin}${checkInPath}?token=${prompt.token}`;
       const changesBeforeGet = database.raw.prepare("SELECT total_changes() AS count").get();
 
       for (let visit = 0; visit < 3; visit += 1) {
-        const response = yield* getForm.pipe(request("GET", `${origin}${checkInPath}?token=${prompt.token}`));
+        const response = yield* getForm.pipe(request("GET", link));
         assert.strictEqual(response.status, 200);
       }
+
+      // Every answer a GET can give, inside the same window. Three of the handler's four are
+      // refusals, and a refusal that wrote would be the easiest one to add without noticing —
+      // the claim is about the verb, not about the happy path.
+      const noToken = yield* getForm.pipe(request("GET", `${origin}${checkInPath}`));
+      const unknown = yield* getForm.pipe(request("GET", `${origin}${checkInPath}?token=never-issued`));
+      yield* TestClock.setTime(localHour(21) + 7 * 24 * 60 * 60 * 1_000);
+      const expired = yield* getForm.pipe(request("GET", link));
+
+      assert.strictEqual(noToken.status, 400);
+      assert.strictEqual(unknown.status, 404);
+      assert.strictEqual(expired.status, 410);
 
       // Mail scanners and link-preview tools open the links in your inbox before you do. A GET
       // that wrote would answer some days with whatever the defaults are, and nothing would
@@ -109,6 +121,22 @@ it.effect("writes nothing when the prompt link is opened, however many times", (
   ),
 );
 // @attests:end
+
+it.effect("returns unavailable for a database failure on the form path", () =>
+  Effect.gen(function* () {
+    const response = yield* getForm.pipe(
+      request("GET", `${origin}${checkInPath}?token=never-issued`),
+      Effect.provideService(CheckInFormRead, {
+        forToken: () => Effect.fail(new DatabaseError({ cause: "transient", operation: "test read" })),
+      }),
+    );
+
+    // The same answer the POST path gives, and the reason this is a test rather than a defect:
+    // a transient D1 failure on the daily link used to die, so the one page a reader ever opens
+    // returned nothing a reader could act on.
+    assert.strictEqual(response.status, 503);
+  }),
+);
 
 it.effect("returns unavailable for a database failure", () =>
   Effect.gen(function* () {

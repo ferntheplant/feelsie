@@ -3,7 +3,7 @@ import { Effect, Exit } from "effect";
 import type { Layer } from "effect";
 
 import { configLayer, currentLocalTime } from "#core";
-import type { isSendHour, senderAddress, CoreConfig } from "#core";
+import type { senderAddress, CoreConfig } from "#core";
 
 import { configEnvironmentVariables } from "./config.ts";
 
@@ -16,7 +16,6 @@ const validEnvironment = {
 // @attests root/config/is-required-and-valid
 it("exposes configured operations through the CoreConfig service", () => {
   expectTypeOf<Effect.Services<typeof currentLocalTime>>().toEqualTypeOf<CoreConfig>();
-  expectTypeOf<Effect.Services<typeof isSendHour>>().toEqualTypeOf<CoreConfig>();
   expectTypeOf<Effect.Services<ReturnType<typeof senderAddress>>>().toEqualTypeOf<CoreConfig>();
   expectTypeOf<Layer.Success<ReturnType<typeof configLayer>>>().toEqualTypeOf<CoreConfig>();
 });

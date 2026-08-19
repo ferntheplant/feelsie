@@ -1087,3 +1087,36 @@ recorded.
 
 **Filed `watch`.** One external side effect and one provider. A second occurrence will show
 whether this belongs beside C26's proxy-observation rule or remains an ordinary coverage failure.
+
+---
+
+## C33 — A mechanism can be added, argued for, and never witnessed · `watch`
+
+The build's own coverage prose for `root/checkin/prompt/records-a-failed-send` was correct and
+complete about the claim. Meanwhile a fix commit added `attempt_id` — migration `0003`, a unique
+index, a UUID per attempt, and a paragraph in this amendment explaining why the D1 adapter's retry
+needs it. No witness named it. Replacing `crypto.randomUUID()` with a constant string passed all
+twenty-three tests.
+
+The consequence was not small. `recordSendFailure` upserts on `attempt_id`, so one identity across
+a day's three refusals folds them into a single row holding the first failure's time and the last
+one's reason — a claim about recording failures, quietly recording one of them.
+
+**Why coverage did not catch it.** Coverage asks whether a claim's witnesses reach the whole
+claim, and they did. `attempt_id` is not in the claim; it is in the **implementation of** the
+claim, introduced to keep the claim true under a retry that was itself added mid-build. Crux's
+audit walks from claims to witnesses. Nothing walks from the code the other way and asks _what
+here is load-bearing and unobserved_.
+
+Two other gaps in the same amendment had the same shape. "Or the local date ends" entered by the
+operator's ruling and no witness followed it; the GET write-count window was drawn around the
+happy path when the handler has four answers. In all three cases the prose was ahead of the
+instruments, and the prose is what an audit reads.
+
+**The narrow prompt this suggests**, and it is cheap: after a claim's witnesses are agreed, break
+each mechanism the implementation added **since the amendment was written** and check that
+something denies. That is not a new artifact and not a new rule — it is mutation, aimed at the
+diff rather than at the file.
+
+**Filed `watch`.** One amendment, three instances, all found by the same pass. A second occurrence
+would argue for making it a step rather than a habit.
